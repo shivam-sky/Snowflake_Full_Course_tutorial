@@ -1,0 +1,50 @@
+ ============================================ ZERO COPY CLONING ===========================================================
+
+-- “zero-copy cloning,” creates a copy of a database, schema or table. 
+-- A snapshot of data present in the source object is taken when the clone is created, and is made available to the cloned object.
+-- The cloned object is writable, and is independent of the clone source.
+
+ADVANTAGES OF ZERO COPY CLONING 
+ -- Zero Copy Cloning saves you in Storage costs 
+ -- Any DML update to the cloned table will not effect on the source object.
+ -- Saves your Time: You usually have to wait hours, days, or even weeks to create a test or development environment 
+                                                               --    from a copy of your production data warehouse
+
+select * from sky.sky.user_email;
+
+// Cloning a Table
+CREATE TABLE sky.sky.user_email_clone
+CLONE sky.sky.user_email;
+select * from sky.sky.user_email_clone;
+
+// Cloning Schema
+CREATE SCHEMA sky.sky_copy
+CLONE sky.sky;
+
+// Cloning Database
+CREATE DATABASE sky_copy
+CLONE sky;
+
+//Updating data in source table and cloned objects and observing both the tables
+--making changes in source table
+select * from sky.sky.user_email where id=1;
+UPDATE sky.sky.user_email SET FIRST_NAME='ABCDEFGH' where id=1;
+select * from sky.sky.user_email where id=1;
+select * from sky.sky.user_email_clone where id=1;
+
+--making changes in cloned table
+select * from sky.sky.user_email_clone where id=1;
+UPDATE sky.sky.user_email_clone SET FIRST_NAME='XYZ' WHERE id=1;
+select * from sky.sky.user_email_clone where id=1;
+select * from sky.sky.user_email where id=1;
+
+//Dropping cloned objects
+DROP DATABASE sky_copy;
+DROP SCHEMA sky.sky_copy;
+DROP TABLE sky.sky.user_email_clone;
+
+//clong with time travel
+/*SELECT * FROM sky.sky.user_email;
+CREATE OR REPLACE TABLE sky.sky.user_email_clone_tt
+CLONE sky.sky.user_email at (OFFSET = -60*5); 
+SELECT * FROM sky.sky.user_email_clone_tt;  */
