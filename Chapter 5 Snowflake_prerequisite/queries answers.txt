@@ -1,0 +1,37 @@
+1-> select * from employee where EmpName like 'p%';
+
+2-> select count(salary) as count from empsalary where ispermanent='yes' and salary>5000
+
+3-> select * from employee where emaildid like '%@gmail.com'
+
+4-> select * from employee where department='E-102' or department='E-104'
+
+5-> select deptname from empdept where deptid ='E-102'
+
+6-> select sum(salary) as salary from empsalary where ispermanent='yes'
+
+7-> select * from employee where empname like '%a'
+
+8-> select count(empid) as employee, projectid from empproject group by projectid
+
+9-> select count(projectid) as project from empproject where startyear=2010
+
+10-> select count(projectid) as project from empproject where startyear=endyear
+
+11-> select * from employee where empname like '__h%'
+
+12-> select deptname from empdept where deptid in (select department from employee where empid>103)
+
+13-> select empname from employee where empheadid =(select empid from employee where empname='abhishek')
+
+14-> select empname from employee where empid =(select depthead from empdept where deptname='hr')
+
+15-> select empname from employee where empid in(select empheadid from employee) and empid in(select empid from empsalary where ispermanent='yes')
+
+16-> select empname, emaildid from employee where empid in(select depthead from empdept ) and empid in(select empid from empsalary where ispermanent='no')
+
+17-> select * from employee where department in(select deptid from empdept where dept_off='monday')
+
+18-> select * from clienttable where cid in(select cid from country where cname='india')
+
+19-> select * from employee where department in(select deptid from empdept where deptname='development')

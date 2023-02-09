@@ -1,0 +1,39 @@
+1)      Select the detail of the employee whose name start with P.
+
+2)      How many permanent candidate take salary more than 5000.
+
+3)      Select the detail of employee whose emailId is in gmail.
+
+4)      Select the details of the employee who work either for department E-104 or E-102.
+
+5)      What is the department name for DeptID E-102?
+
+6)      What is total salary that is paid to permanent employees?
+
+7)      List name of all employees whose name ends with a.
+
+8)      List the number of department of employees in each project.
+
+9)      How many project started in year 2010.
+
+10)   How many project started and finished in the same year.
+
+11)   select the name of the employee whose name's 3rd character is 'h'.
+
+12)   Select the department name of the company which is assigned to the employee whose employee id is grater 103.
+
+13)   Select the name of the employee who is working under Abhishek.
+
+14)   Select the name of the employee who is department head of HR.
+
+15)   Select the name of the employee head who is permanent.
+
+16)   Select the name and email of the Dept Head who is not Permanent.
+
+17)   Select the employee whose department off is Monday
+
+18)   select the Indian Clients details.
+
+19)   select the details of all employee working in development department.
+
+ 
