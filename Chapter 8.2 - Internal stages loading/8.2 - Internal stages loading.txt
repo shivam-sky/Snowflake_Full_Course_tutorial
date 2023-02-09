@@ -1,0 +1,191 @@
+                     **          STAGES - INTERNAL    **
+
+-- A stage specifies where data files are stored (i.e. “staged”) so that the data in the files can be loaded into a table.
+-- By default, each user and table in Snowflake is automatically allocated an internal stage for staging data files 
+-- to be loaded. In addition, you can create named internal stages.
+
+-- 3 types of internal stages -- 
+                                  1. USER  2. TABLE  3. NAMED
+
+-------------------------------------------USER STAGE--------------------------------------------
+-- each user is allocated a user stage automatically.
+-- user stages cannot be altered or dropped.
+-- This stage is a convenient option if your files will only be accessed by a single user.
+-- User stages are referenced using @~
+
+-- loading data to USER stage using snowsql cli
+   put file://C:\Users\shivamkum\Pictures\file_format\customer_10k_good_data.csv @~staged;    
+
+-- listing a user stage 
+    list @~;
+
+------------------------------------------TABLE STAGE---------------------------------------------------------
+-- Each table has a table stage allocated to it by default for storing files
+-- Table stages have the same name as the table; e.g. a table named mytable has a stage referenced as @%mytable.
+-- table stages cannot be altered or dropped.
+-- table stages are referred using @%
+
+-- loading data to TABLE stage 
+    put file://C:\Users\shivamkum\Pictures\file_format\customer_10k_good_data.csv @%cli_customer;    
+    
+-- showing(listing) table stage 
+     list @%cli_customer;
+     
+     
+------------------------------------------------NAMED STAGE----------------------------------------------------
+-- named stages are referred using @
+
+-- creating a named stage
+  create or replace stage my_stage
+  file_format = my_csv_format;
+  
+-- creating a named stage by giving ff values  
+  create or replace stage my_stage
+  file_format = (type = 'CSV' field_delimiter = '|' skip_header = 1);
+
+-- loading data to NAMED stage 
+    put file://C:\Users\shivamkum\Pictures\file_format\customer_10k_good_data.csv @customer_stage;    
+    
+-- showing(listing) table stage 
+         list @customer_stage;
+
+========================================================================================================================
+
+---------------------------------------uploading data to the stages(USER,TABLE,NAMED)---------------------------------
+
+-- For loading from internal stages, we use 2 commands  -- 1. PUT     2. COPY
+
+-- 1. PUT -> For Uploading data files from a local directory/folder to the stages( User, Table & Named stages )
+--           PUT does not support uploading files to external stages.
+
+-- syntax for uploading 
+  put file://<local_direct_path> @<stage_name>
+     parallel = 10 Auto_compress = true/ False ;
+     
+   -- example 
+   put file://c:\temp\data\mydata.csv @~ auto_compress=true;
+
+-- 2. COPY -> The files must already be in stage location.
+
+-- syntax
+   copy into mytable
+   from @my_int_stage;
+   
+-- example
+    copy into mytable from @~/staged
+    file_format = (format_name = 'mycsv');
+    
+-- copy command properties    
+     pattern='.*/.*/.*[.]csv[.]gz'
+     FILES = ( '<file_name>' )
+     file_format = <format_name>
+     ON_ERROR = { CONTINUE | SKIP_FILE | SKIP_FILE_<num> | 'SKIP_FILE_<num>%' | ABORT_STATEMENT }
+     SIZE_LIMIT = <num>
+     PURGE = TRUE | FALSE
+     RETURN_FAILED_ONLY = TRUE | FALSE
+     MATCH_BY_COLUMN_NAME = CASE_SENSITIVE | CASE_INSENSITIVE | NONE
+     ENFORCE_LENGTH = TRUE | FALSE
+     TRUNCATECOLUMNS = TRUE | FALSE
+     FORCE = TRUE | FALSE
+     LOAD_UNCERTAIN_FILES = TRUE | FALSE
+    
+------------------------------------------------------------------------------------------------
+
+-- table for loading data from all stages(user,table,named)
+create or replace table customer_csv (
+	customer_pk number(38,0),
+	salutation varchar(10),
+	first_name varchar(20),
+	last_name varchar(30),
+	gender varchar(1),
+	marital_status varchar(1),
+	day_of_birth date,
+	birth_country varchar(60),
+	email_address varchar(50),
+	city_name varchar(60),
+	zip_code varchar(10),
+	country_name varchar(20),
+	gmt_timezone_offset number(10,2),
+	preferred_cust_flag boolean,
+	registration_time timestamp_ltz(9)
+);
+    
+select * from customer_csv;    
+    
+
+-- uploading data file to user stage 
+put file://C:\Users\shivamkum\Videos\sky_files\Mutiple_tb\customer_1.csv @~/staged;
+    
+-- uploading data file to table stage (customer_csv)  
+put file://C:\Users\shivamkum\Videos\sky_files\Mutiple_tb\customer_1.csv @%customer_csv;
+
+-- file format for named stage
+create or replace file format customer_ff
+type = 'csv', field_delimiter =',' , field_optionally_enclosed_by ='\042' , skip_header = 1;
+
+-- creating a named stage (customer_stage)
+create or replace stage customer_stage
+file_format= customer_ff;
+
+-- uploading data file to named stage (customer_stage)
+put file://C:\Users\shivamkum\Videos\sky_files\Mutiple_tb\customer_1.csv @customer_stage;
+
+-- listing from internal stages
+
+list @~/staged;    -- user stage
+list @%customer_csv;   -- table stage
+list @customer_stage;    -- named stage
+
+---------------------------- COPYING DATA FROM STAGES TO TABLES -----------------------
+
+-- copying (loading) data files from stages(user,named,table) to table (customer_csv)
+
+-- load data from user stage
+copy into customer_csv
+from @~/staged
+file_format = (type = 'csv', field_delimiter =',' , field_optionally_enclosed_by ='\042' , skip_header = 1);
+
+select * from customer_csv;
+
+-- load data from table stage
+copy into customer_csv
+from @%customer_csv
+file_format = (type = 'csv', field_delimiter =',' , field_optionally_enclosed_by ='\042' , skip_header = 1);
+
+select * from customer_csv;
+
+-- load data from named stage (customer_stage)
+copy into customer_csv
+from @customer_stage/customer_1.csv ;
+
+select * from customer_csv;
+
+-- loading data to multiple tables
+select * from cli_customer;
+
+----------------------------------------==================================--------------------------------------------------------------
+
+-- SOME MORE EXAMPLES OF LOADING TO TABLES FROM ALL 3 STAGES(USER,TABLE,NAMED) -- by giving inline file format properties
+-- Loading all data from stages(USER,TABLE,NAMED) to the table(cli_customer)
+
+--copying data from USER stage to target table(CLI_CUSTOMER)
+COPY into sky.sky.cli_customer
+FROM @~/staged
+file_format = (type='csv', field_delimiter=',',field_optionally_enclosed_by='\042',skip_header=1);
+
+--copying data from TABLE stage to target table(CLI_CUSTOMER)
+COPY into sky.sky.cli_customer
+FROM @%cli_customer
+file_format = (type='csv', field_delimiter=',',field_optionally_enclosed_by='\042',skip_header=1);
+
+--copying data from NAMED stage to target table(CLI_CUSTOMER)
+COPY into sky.sky.cli_customer
+FROM @sky.sky.customer_stage/customer_10k_good_data.csv
+file_format = (type=csv field_delimiter='|' record_delimiter='\n' null_if = ('NULL', 'null') empty_field_as_null = true skip_header=1);
+
+
+// Verifying the loaded data 
+
+Select * from sky.sky.cli_customer;
+list @%cli_customer;
+
