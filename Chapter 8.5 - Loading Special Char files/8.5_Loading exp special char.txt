@@ -1,0 +1,97 @@
+---------------------------------------4. LOADING DATA FILES WITH SPECIAL CHARACTER --------------------------------------------------
+
+6 scenarios - 1. simple csv file
+              2. All records in double quotes
+              3. All records in single quotes
+              4. All records in double quotes with \n
+              5. All records with mixed quotes (single & double)
+              6. All records with new lines
+            
+
+-- create a table
+create or replace table user_email(
+    id number,
+    first_name varchar(100),
+    last_name varchar(100),
+    email varchar(100),
+    gender varchar(1),
+    about_me varchar(500)
+);
+
+
+-- create a file format where field_optionally_enclosed_by parameter will take double quote (\042)
+create or replace file format csv_double_q_ff 
+    type = 'csv' 
+    compression = 'none' 
+    field_delimiter = ',' 
+    record_delimiter = '\n' 
+    skip_header = 1 
+    field_optionally_enclosed_by = '\042' 
+    trim_space = false 
+    error_on_column_count_mismatch = true
+    escape = '\134';
+
+-- another file format where field_optionally_enclosed_by parameter will take single quote (\047)
+create or replace file format csv_single_q_ff 
+    type = 'csv' 
+    compression = 'none' 
+    field_delimiter = ',' 
+    record_delimiter = '\n' 
+    skip_header = 1 
+    field_optionally_enclosed_by = '\047' 
+    trim_space = false 
+    error_on_column_count_mismatch = true;
+
+-- create a stage to load all data files in 1 go
+create or replace stage special_char;
+
+list @special_char;
+-- upload file to stage
+
+-- copy file from stage to table (SMPLE CSV FILE)
+copy into user_email
+from @special_char/01_sample_user_email.csv
+file_format = csv_double_q_ff
+on_error = 'CONTINUE';
+
+select * from user_email;
+truncate table user_email;
+
+------------------FILE WITH DOUBLE QUOTES
+copy into user_email
+from @special_char/02_sample_email_double_quotes.csv
+file_format = csv_double_q_ff
+on_error = 'CONTINUE';
+
+------------------FILE WITH SINGLE QUOTES
+copy into user_email
+from @special_char/03_sample_email_single_quote.csv
+file_format = csv_single_q_ff
+on_error = 'CONTINUE';
+
+------------------FILE WITH MIXED QUOTES
+copy into user_email
+from @special_char/04_sample_email_quote_mixed.csv
+file_format = csv_double_q_ff
+on_error = 'CONTINUE';
+
+select * from user_email;
+truncate table user_email;
+
+------------------FILE WITH NEW LINE CHARACTER
+copy into user_email
+from @special_char/05_sample_email_new_line.csv
+file_format = csv_double_q_ff
+on_error = 'CONTINUE';
+
+select * from user_email;
+truncate table user_email;
+
+------------------FILE WITH NEW LINE CHARACTER and double quotes 
+copy into user_email
+from @special_char/04_1_sample_email_double_q.csv
+file_format = csv_double_q_ff
+on_error = 'CONTINUE';
+
+select * from user_email;
+truncate table user_email;
