@@ -1,0 +1,133 @@
+// ARN -- Amazon Resource Names
+// S3 -- Simple Storage Service
+// IAM -- Integrated Account Management
+
+// AWS --> S3 , DMS(Teraform) , LAMDA 
+
+// Azure --> blobstorage , ADF , Data bricks 
+
+// Snowflake --> RBAC controls, data sharing, virtual warehouse sizing, query performance tuning, zero copy clone, 
+--               and time travel + failsafe, Search optimization , tagging 
+--               Snow park, SnowSight, SnowSQL, SnowPipe, and SnowAlert
+
+
+---------------------------------------- CREATING STORAGE OBJECT AND EXCHANGING THE ARN'S -----------------
+
+// Create storage integration object
+create or replace storage integration sky_aws_int
+  TYPE = EXTERNAL_STAGE
+  STORAGE_PROVIDER = S3
+  ENABLED = TRUE 
+  STORAGE_AWS_ROLE_ARN = 'arn:aws:iam::713405064877:role/sky_aws_admin'
+  STORAGE_ALLOWED_LOCATIONS = ('s3://skybucket01/pipes/', 's3://skybucket01/csv/')
+  COMMENT = 'Integration with aws s3 buckets' ;
+
+
+// Get external_id and update it in  S3
+DESC integration sky_aws_int;  -- arn:aws:iam::226317514381:user/j3f30000-s
+
+CREATE OR REPLACE STAGE stage_aws
+    URL = 's3://skybucket01/pipes/'
+    STORAGE_INTEGRATION = sky_aws_int ;
+    
+list @stage_aws;
+
+================================== LOADING DATA FROM AWS S3 USING COPY COMMAND (sky_coding_video) ========================================
+
+-- create a table
+create or replace table sky.sky.user_email(
+    id number,
+    first_name varchar(100),
+    last_name varchar(100),
+    email varchar(100),
+    gender varchar(1),
+    about_me varchar(500)
+);
+
+select * from user_Email;
+
+// Create a ff object
+CREATE OR REPLACE file format sky.sky.aws_ff
+    type = csv
+    field_delimiter = ','
+    skip_header = 1
+    field_optionally_enclosed_by = '\042'
+    empty_field_as_null = TRUE;
+    
+-- create a stage
+create or replace stage sky.sky.stage_aws
+url = 's3://skybucket01/pipes/'
+storage_integration = sky_aws_int
+file_format = aws_ff ;
+
+list @stage_aws;
+
+--copying data from aws s3
+copy into user_email
+from @stage_aws
+files = ('01_sample_user_email.csv');
+
+select * from user_Email;
+
+===========================================================================================================================
+
+-----------------------------------LOADING DATA FROM AWS S3 USING COPY COMMAND---------------------
+
+// Create a ff object
+CREATE OR REPLACE file format sky.aws.aws_ff
+    type = csv
+    field_delimiter = ','
+    skip_header = 1
+    field_optionally_enclosed_by = '\042'
+    empty_field_as_null = TRUE;
+    
+// Create stage object with integration object & file format object
+CREATE OR REPLACE STAGE sky.aws.stage_aws
+    URL = 's3://skybucket01/csv/'
+    STORAGE_INTEGRATION = sky_aws_int
+    FILE_FORMAT = aws_ff ;
+
+list @sky.aws.stage_aws;
+
+//copying data from aws_stage
+copy into sky.aws.customer_data
+from @sky.aws.stage_aws
+file_format = sky.aws.aws_ff
+files = ('customer_1.csv');
+
+//verifying the loaded data
+select * from sky.aws.customer_data;
+
+------- loading with copy command with some alternative method ------------
+
+create or replace file format sky.aws.customer_csv_ff 
+    type = 'csv' 
+    compression = 'none' 
+    field_delimiter = ','
+    field_optionally_enclosed_by = '\042'
+    skip_header = 1 ; 
+
+// Publicly accessible staging area    
+CREATE OR REPLACE STAGE sky.aws.external_stage
+    url='s3://bucketsnowflakes3';
+    
+list @sky.aws.external_stage
+
+//coping with giving file name
+COPY INTO sky.sky.customer_csv
+    FROM @sky.aws.external_stage
+    file_format = customer_csv_ff
+    files = ('customer_1.csv');
+    
+// Copying with pattern for file names
+COPY INTO sky.sky.customer_csv
+    FROM @sky.aws.external_stage
+    file_format= customer_csv_ff
+    pattern='.*customer.*';
+    
+// Altering file format object
+ALTER file format sky.aws.customer_csv_ff
+    SET compression ='gzip';
+    
+    
+    
