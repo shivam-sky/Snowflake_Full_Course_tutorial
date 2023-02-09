@@ -1,0 +1,150 @@
+----------------------------------------FILE FORMAT---------------------------------------
+/*
+     Snowflake File format is a named database object that can be used to simplify the process of accessing the staged data 
+     and streamlines loading data into and unloading data out of database tables.
+     
+     format file options : 
+      Type = 'csv' , 'psv' , 'tsv' 'json' ,'xml' , 'parquet' , avro , orc  */
+            
+----------creating csv ff
+create or replace file format sky.sky.customer_csv_ff 
+    type = 'csv' 
+    compression = 'none' 
+    field_delimiter = ','
+    field_optionally_enclosed_by = 'none'
+    skip_header = 1 ;  
+
+
+--creating psv ff
+create or replace file format sky.sky.customer_psv_ff
+type='csv'
+compression ='none'
+field_delimiter='|'
+field_optionally_enclosed_by ='\042'
+skip_header=1;
+
+--creating tsv ff
+create or replace file format sky.sky.customer_tsv_ff
+type='csv'
+compression='none'
+field_delimiter='\t'
+field_optionally_enclosed_by='\042'
+skip_header=1;
+
+
+file format options :
+
+1. type = 'csv' / 'json'
+2. compression = AUTO | GZIP | BZ2 | BROTLI | ZSTD | DEFLATE | RAW_DEFLATE | NONE
+      Use --> Data loading, data unloading, and external tables
+      Default --> AUTO 
+3. Record Delimiter= '\n' '\r'
+4. Field Delimiter = ',' '|' , '\t'
+5. Field Extension = '.csv'
+6. skip_header = '1' | 'none'
+7. SKIP_BLANK_LINES = TRUE | FALSE  -- Boolean that specifies to skip any blank lines encountered in the data files;
+                                       otherwise, blank lines produce an end-of-record error (default behavior).
+8. FIELD_OPTIONALLY_ENCLOSED_BY ='none' | '\042' 
+9. ERROR_ON_COLUMN_COUNT_MISMATCH = TRUE | FALSE
+
+--------------------------------------------------------------------------------------------
+create or replace file format sky.sky.customer_csv_ff
+type= 'csv'
+field_delimiter =','
+skip_header=1
+field_optionally_enclosed_by="none"
+null_if = ('null','NULL')
+empty_field_as_null = true
+compression = gzip
+
+----------------------------creating the CSV file format--------------------------------------
+
+select * from customer_csv;
+create or replace file format sky.sky.customer_csv_ff 
+    type = 'csv' 
+    compression = 'none' 
+    field_delimiter = ','
+    field_optionally_enclosed_by = 'none'
+    skip_header = 1 ;  
+
+----------- All data is not loading because of double quotes error so changing the enclosed by value --------------
+
+truncate customer_csv;
+-- field optionally enclosed
+create or replace file format sky.sky.customer_csv_ff2
+    type = 'csv' 
+    compression = 'none' 
+    field_delimiter = ','
+    field_optionally_enclosed_by = '\042' -- because I'm facing double quotes error as this data is not loading 
+    skip_header = 1 ;
+
+------loading data to customer_csv file format table --------
+
+PUT file://C:\Users\shivamkum\Pictures\file_format\customer_10k_good_data.csv @CUSTOMER_CSV/ui1671265990031
+COPY INTO sky.sky.customer_csv FROM @/ui1671265990031 FILE_FORMAT = sky.sky.customer_csv_ff ON_ERROR = 'CONTINUE' PURGE = TRUE;
+
+
+----------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------- Loading data in psv files-------------------------------------
+
+--creating ff for psv
+create or replace file format sky.sky.customer_psv_ff
+type='csv'
+compression ='none'
+field_delimiter='|'
+field_optionally_enclosed_by ='\042'
+skip_header=1;
+
+-- loading data in psv 
+
+PUT file://<file_path>/customer_10k_good_data.psv @CUSTOMER_PSV/ui1671269139940
+COPY INTO sky.sky.customer_psv FROM @/ui1671269139940 FILE_FORMAT = '"SKY"."SKY"."CUSTOMER_PSV_FF"' ON_ERROR = 'CONTINUE' PURGE = TRUE;
+
+
+------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------Loading data in tsv files--------------------------------------
+--truncate sky.sky.customer_tsv;
+--creating tsv ff for tsv loading
+create or replace file format sky.sky.customer_tsv_ff
+type='csv'
+compression='none'
+field_delimiter='\t'
+field_optionally_enclosed_by='\042'
+skip_header=1;
+
+-- loading data to tsv ff
+PUT file://C:\Users\shivamkum\Pictures\file loading\customer_10k_good_data.tsv @CUSTOMER_TSV/ui1671269408234
+COPY INTO sky.sky.customer_tsv FROM @/ui1671269408234 FILE_FORMAT = '"SKY"."SKY"."CUSTOMER_TSV_FF"' ON_ERROR = 'CONTINUE' PURGE = TRUE;
+
+
+----------------------------------dealing with loading error commands-----------------------------
+
+-- On Error => Skip The file
+
+COPY INTO sky.sky.customer_csv 
+    FROM @/ui1664948747495 
+    FILE_FORMAT = sky.sky.customer_tsv_ff 
+    ON_ERROR = 'SKIP_FILE'       -
+    PURGE = TRUE;
+
+-- On Error => Abort Statement
+
+COPY INTO sky.sky.customer_csv  
+    FROM @/ui1664948747495 
+    FILE_FORMAT = sky.sky.customer_csv_ff  
+    ON_ERROR = 'ABORT_STATEMENT' 
+    PURGE = TRUE;
+
+-- On Error => Skip upto 10 error records
+COPY INTO sky.sky.customer_csv 
+    FROM @/ui1664948747495 
+    FILE_FORMAT = sky.sky.customer_csv_ff 
+    ON_ERROR = 'SKIP_FILE_10' 
+    PURGE = TRUE;
+    
+-- On Error => Continue even if there is an error
+COPY INTO sky.sky.customer_csv  
+    FROM @/ui1664948747495 
+    FILE_FORMAT = sky.sky.customer_csv_ff 
+    ON_ERROR = 'CONTINUE' 
+    PURGE = TRUE;
