@@ -1,0 +1,135 @@
+
+============================================ SOME MORE LOADING EXAMPLES ====================================================
+
+
+1. Loading multiple csv files in 1 go
+2. Loading big data files
+3. Loading files with column mismatch
+4. Loading files with special character
+
+
+
+----------------------------------- 1. LOADING MULTIPLE CSV FILES IN 1 GO to table ----------------------------------
+
+-- create a tabel for multiple files 
+create or replace table customer_multiple(
+	customer_pk number(38,0),
+	salutation varchar(10),
+	first_name varchar(20),
+	last_name varchar(30),
+	gender varchar(1),
+	marital_status varchar(1),
+	day_of_birth date,
+	birth_country varchar(60),
+	email_address varchar(50),
+	city_name varchar(60),
+	zip_code varchar(10),
+	country_name varchar(20),
+	gmt_timezone_offset number(10,2),
+	preferred_cust_flag boolean,
+	registration_time timestamp_ltz(9)
+);
+
+select * from customer_multiple;
+
+-- create a file format 
+create or replace file format customer_multi_ff
+type = 'csv' , field_delimiter= ',' , field_optionally_enclosed_by = '\042' , skip_header=1 ;
+
+-- create a stage to load all data files in 1 go
+
+create or replace stage customer_multi
+file_format = customer_multi_ff ;
+
+list @customer_multi;
+
+-- upload file to stage
+put file://C:\Users\shivamkum\Videos\sky_files\Mutiple_tb\mutiple_loading\customer_*.csv @customer_multi ;
+
+-- copy file from stage to table 
+copy into customer_multiple 
+from @customer_multi
+file_format = customer_multi_ff
+on_error = 'CONTINUE'
+pattern ='.*[.]csv[.]gz' ;
+
+select * from customer_multiple;
+
+---------------------------------------2. LOADING BIG DATA FILES --------------------------------------------------
+
+-- create a tabel for multiple files 
+-- create a tabel for multiple files 
+create or replace table customer_bigdata(
+	customer_pk number(38,0),
+	salutation varchar(10),
+	first_name varchar(20),
+	last_name varchar(30),
+	gender varchar(1),
+	marital_status varchar(1),
+	day_of_birth date,
+	birth_country varchar(60),
+	email_address varchar(50),
+	city_name varchar(60),
+	zip_code varchar(10),
+	country_name varchar(20),
+	gmt_timezone_offset number(10,2),
+	preferred_cust_flag boolean,
+	registration_time timestamp_ltz(9)
+);
+
+select * from customer_bigdata;
+
+-- create a file format 
+create or replace file format customer_multi_ff
+type = 'csv' , field_delimiter= ',' ,record_delimiter = '\n', field_optionally_enclosed_by = '\042' , skip_header=1 ;
+
+-- create a stage to load all data files in 1 go
+create or replace stage customer_bigdata
+file_format = customer_multi_ff;
+
+-- upload file to stage
+put file://C:\Users\shivamkum\Videos\sky_files\Mutiple_tb\big_data\customer_10k_*.csv @customer_bigdata parallel=20;
+
+list @customer_bigdata;
+
+-- copy file from stage to table 
+copy into customer_bigdata
+from @customer_bigdata
+file_format = customer_multi_ff
+on_error = 'CONTINUE'
+pattern ='.*[.]csv[.]gz' 
+purge = true;
+
+select * from customer_bigdata;
+
+---------------------------------------3. LOADING DATA FILES WITH COLUMN MISMATCH --------------------------------------------------
+
+-- create a table
+
+create or replace table column_mismatch (
+record_type varchar(44), cycle_run varchar(33),
+customer_pk number, salutation varchar(22), first_name varchar(33), last_name varchar(44), gender varchar(5));
+
+select * from column_mismatch;
+
+-- create a file format 
+create or replace file format customer_multi_ff
+type = 'csv' , field_delimiter= ',', field_optionally_enclosed_by ='\042',skip_header=1;
+
+-- create a stage to load all data files in 1 go
+create or replace stage column_stage
+file_format = customer_multi_ff;
+
+-- upload file to stage
+put file://C:\Users\shivamkum\Videos\sky_files\Mutiple_tb\Column_mismatch\custom_mismatch.csv @column_stage auto_compress = false ;
+
+list @column_stage;
+
+-- copy file from stage to table 
+copy into column_mismatch
+from @column_stage
+file_format = customer_multi_ff
+on_error = 'CONTINUE' ; 
+
+select * from column_mismatch;
+truncate table column_mismatch;
