@@ -1,0 +1,150 @@
+
+=========================================== TIME TRAVEL IN SNOWFLAKE ============================================
+=============================================================================================================================
+----------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------
+
+
+Time Travel --> Snowflake Time Travel enables accessing historical data (i.e. data that has been changed or deleted) at any point
+                within a defined period. It serves as a powerful tool for performing the following tasks:
+
+RETENSION PERIOD --> The data retention period specifies the number of days for which this historical data is preserved and,
+                     therefore, Time Travel operations (SELECT, CREATE … CLONE, UNDROP) can be performed on the data.
+
+FAIL SAFE --> Fail-safe provides a (non-configurable) 7-day period during which historical data may be recoverable by Snowflake.
+          --  This period starts immediately after the Time Travel retention period ends.
+
+Time Travel syntax :
+   
+   SELECT ...
+FROM ...
+  {
+   AT( { TIMESTAMP => <timestamp> | OFFSET => <time_difference> | STATEMENT => <id> | STREAM => '<name>' } ) |
+   BEFORE( STATEMENT => <id> )
+  }
+[ ... ]
+
+
+Time Travel options : 
+    
+  TIMESTAMP => <timestamp>  ==> Specifies an exact date and time to use for Time Travel. Note that the value must be explicitly cast to a TIMESTAMP.
+  OFFSET => <time_difference>  ==> Specifies the difference in seconds from the current time to use for Time Travel
+  STATEMENT => <id> ==>  Specifies the query ID of a statement to use as the reference point for Time Travel. 
+  STREAM => '<name>' ==> Specifies the identifier (i.e. name) for an existing stream on the queried table or view.         
+                         
+
+
+ 1. For Standard edition: 
+                --> The standard retention period is 1 day (24 hours) and is automatically enabled for all Snowflake accounts:
+
+ 2. For Snowflake Enterprise Edition (and higher):
+                                        --> the retention period can be set to any value from 0 up to 90 days.
+
+Enable time travel : 
+                 DATA_RETENTION_TIME_IN_DAYS = 1;
+                 
+Disable time travel :
+                 DATA_RETENTION_TIME_IN_DAYS = 0;
+
+
+-- for standard free trial edition account , retention period is just 1 Day.
+
+
+-- setting a tt to a table 
+create or replace table time_travel_ex ( id number , name string)
+DATA_RETENTION_TIME_IN_DAYS = 10;
+
+-- setting a tt to schema
+create or replace schema time_travel_ex
+DATA_RETENTION_TIME_IN_DAYS = 1;
+
+-- setting tt for db
+create or replace database time_travel_ex
+DATA_RETENTION_TIME_IN_DAYS = 1;
+
+-- altering retention period on tble
+alter table time_travel_ex
+set DATA_RETENTION_TIME_IN_DAYS = 1;
+
+-- listing a retention period
+show tables like 'time_travel_ex';
+show schemas like 'time_travel_ex';
+show databases like 'time_travel_ex';
+
+=====================================================================================================================
+
+-- 1. offset 2. timestamp 3. before id 
+
+
+-- querying historial data  -- updating some data first
+
+-- CASE 1 : updating some data in user email  ------> OFFSET 
+select * from user_email ;
+update user_email set first_name = 'skycoding' where id = 1; ---- ABC --> earlier name 
+select * from user_email where id = 1;
+
+-- querying historical data by offset 
+select * from user_email at(offset => -60*50) where id = 1;
+
+------------------------------------------------------------------------------------------------------
+-- CASE 2 : updating some data in st details table   ------> timestamp
+
+select * from stdetails;
+update stdetails set name  = 'skycoding' where st_id = 2;    -- priyam 
+select current_timestamp;  ---- 2023-01-09 20:39:08.712 -0800
+
+-- querying historical data by timestamp 
+select * from stdetails at (timestamp => '2023-01-09 20:39:08.712 -0800' ::timestamp);
+
+------------------------------------------------------------------------------------------------------
+-- CASE 3 : updating some data in emp table   ------> BEFORE statement
+
+select * from emp;
+update emp set empname = 'testing' where empid =1; --- NAMAN
+
+select * from emp before (statement => '01a98c7c-3200-a077-0002-c2560008cb72');
+
+--------------------------------------------------------------------------------------------------------
+
+-- restoring tables 
+ drop table project ;
+ undrop table project;
+ 
+-- restoring schemas
+ drop schema time_travel_ex;
+ undrop schema time_travel_ex;
+ 
+ -- restoring databases
+ drop database time_travel_ex;
+ undrop database time_travel_ex;
+
+----------------------------------------------------------------------------------------------------------------
+=================================================================================================================
+
+ -- restoring tables with data 
+
+-- restoring user_email table data using offset
+create or replace table restored_user_email CLONE user_email at (offset => -60*50);
+
+select * from restored_user_email;
+===================================================================================================================
+
+-- restoring stdetails table data using offset
+create or replace table restored_stdetails CLONE stdetails at (timestamp => '2023-01-09 20:39:08.712 -0800' ::timestamp);
+
+select * from restored_stdetails;
+
+====================================================================================================================
+
+-- restoring emp table data using offset
+create or replace table restored_emp clone emp before (statement => '01a98c7c-3200-a077-0002-c2560008cb72');
+
+select * from restored_emp;
+======================================================================================================================
+
+-- restoring schemas 
+create or replace schema restored_user_email CLONE user_email at (offset => -60*50);
+
+-- restoring databases 
+create or replace table restored_user_email CLONE user_email at (offset => -60*50);
+

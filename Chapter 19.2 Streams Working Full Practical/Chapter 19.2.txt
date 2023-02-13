@@ -1,0 +1,350 @@
+/*
+
+Standard & Append Only streams - Permanent, Transient & Temporary table
+Insert Only streams - Ext Table
+
+1. Creating streams - Standard
+2. doing inserts, deletes & updates and check it's captured by stream or not 
+3. Multiple streams on single table
+4. Append Only streams
+5. Streams on Transient & Temporary table 
+6. Streams with putting Time Travel Retention Period = 0 for table 
+7. Consuming data from streams to target tables 
+8. Streams on External tables 
+
+*/
+------------------------------------------ STANDARD STREAMS -----------------------------------------------------
+
+-- create schema for streams
+create schema if not exists streams;
+
+
+-- table for stream
+create or replace table employee
+( empid number,
+  empname varchar,
+  salary number,
+  age number,
+  department varchar,
+  location varchar
+);
+
+-- inserting records to source table
+insert into employee values
+(1, 'aman', 80000, 35, 'sales', 'bangalore'),
+(2, 'pranav', 45000, 26, 'sales', 'hyderabad'),
+(3, 'sid', 76000, 34, 'technology', 'chennai'),
+(4, 'divya', 52000, 28, 'hr', 'hyderabad'),
+(5, 'agrim', 24500, 22, 'technology', 'bangalore'),
+(6, 'vivek', 42000, 27, 'hr', 'chennai') ;
+
+-- listing records of source table
+select * from employee;
+
+-- create a stream on employee table
+create or replace stream employee_stream on table employee;
+
+-- listing a stream
+select * from employee_stream;
+
+-- INSERTS --------------------------------
+
+-- inserting some records to employee table
+insert into employee values
+(7, 'ankit', 80000, 35, 'sales', 'lucknow'),
+(8, 'mohit', 45000, 26, 'sales', 'delhi');
+
+-- listing a stream
+select * from employee_stream;
+
+---------------------------------------------------------------------------------------------------------------------
+
+----- DELETES --------
+
+truncate table employee ;
+
+select * from employee;
+
+-- listing a stream
+select * from employee_stream;
+
+delete from employee where empid = 1;
+
+---------------------------------------------------------------------------------------------------------------------
+
+-- UPDATES --------------------------------------------
+update employee set salary = 49000 where empid=2;
+update employee set location= 'pune' where empid=5;
+
+-- listing a stream
+select * from employee_stream;
+drop stream employee_stream;
+
+-- listing streams
+show streams in schema streams;
+
+-- desc stream 
+desc stream employee_stream;
+
+-- drop stream -- 
+drop stream employee_stream;
+
+------------------------------------------- MULTIPLE STREAMS ON SINGLE TABLE -----------------------------------------------------------------------------
+
+-- we can create multiple streams on single table , let's try 
+create or replace stream employee_stream2 on table employee ;
+
+show streams;
+
+-- inserting some records to employee table
+insert into employee values
+(9, 'ankit', 80000, 35, 'sales', 'lucknow'),
+(10, 'mohit', 45000, 26, 'sales', 'delhi');
+
+select * from employee;
+
+select * from employee_stream2;
+
+---------------------------------------------- APPEND ONLY STREAM ---------------------------------------------------------------------------------
+
+-- table for stream
+create or replace table employee_append
+( empid number,
+  empname varchar,
+  salary number,
+  age number,
+  department varchar,
+  location varchar
+);
+
+-- inserting records to source table
+insert into employee_append values
+(1, 'aman', 80000, 35, 'sales', 'bangalore'),
+(2, 'pranav', 45000, 26, 'sales', 'hyderabad'),
+(3, 'sid', 76000, 34, 'technology', 'chennai'),
+(4, 'divya', 52000, 28, 'hr', 'hyderabad'),
+(5, 'agrim', 24500, 22, 'technology', 'bangalore'),
+(6, 'vivek', 42000, 27, 'hr', 'chennai') ;
+
+-- listing records of source table
+select * from employee_append;
+
+-- create a stream on emp_source table
+
+create or replace stream emp_append_stream on table employee_append
+append_only = true ;
+
+select * from emp_append_stream;
+
+-- insert some records
+insert into employee_append values
+(7, 'ayushi', 80000, 35, 'sales', 'bangalore'),
+(8, 'ash', 45000, 26, 'sales', 'hyderabad');
+
+-- updating some records
+
+-- UPDATES --------------------------------------------
+update employee_append set salary = 49000 where empid=2;
+update employee_append set location= 'pune' where empid=5;
+
+-- record
+delete from employee_append where empid = 1;
+
+-- APPEND ONLY STREAM captures only insert records,
+
+show streams;
+
+
+------------------------------------------------------------------------------------------------------------------------
+                ------------------------------ STREAMS ON TRANSIENT TABLE --------------------------------
+
+-- table for stream
+create or replace transient table employee_transient
+( empid number,
+  empname varchar,
+  salary number,
+  age number,
+  department varchar,
+  location varchar
+);
+
+-- inserting records to source table
+insert into employee_transient values
+(1, 'aman', 80000, 35, 'sales', 'bangalore'),
+(2, 'pranav', 45000, 26, 'sales', 'hyderabad'),
+(3, 'sid', 76000, 34, 'technology', 'chennai'),
+(4, 'divya', 52000, 28, 'hr', 'hyderabad'),
+(5, 'agrim', 24500, 22, 'technology', 'bangalore'),
+(6, 'vivek', 42000, 27, 'hr', 'chennai') ;
+
+select * from employee_transient;
+
+-- creating stream on transient table
+create or replace stream tran_stream on table employee_transient;
+
+select * from tran_stream;
+
+-- insert some records
+insert into employee_transient values
+(7, 'ayushi', 80000, 35, 'sales', 'bangalore'),
+(8, 'ash', 45000, 26, 'sales', 'hyderabad');
+
+
+
+------------------------------------------ CONSUMING DATA FROM STREAMS ---------------------------------------------------------------------------------
+
+-- create a source table
+create or replace table emp_source
+( empid int,
+  empname varchar(30),
+  salary float,
+  age int,
+  dept varchar(15),
+  location varchar(20)
+);
+
+-- inserting records to source table
+insert into emp_source values
+(1, 'amar', 80000, 35, 'sales', 'bangalore'),
+(2, 'bharath', 45000, 26, 'sales', 'hyderabad'),
+(3, 'charan', 76000, 34, 'technology', 'chennai'),
+(4, 'divya', 52000, 28, 'hr', 'hyderabad'),
+(5, 'gopal', 24500, 22, 'technology', 'bangalore'),
+(6, 'haritha', 42000, 27, 'hr', 'chennai') ;
+
+-- listing records of source table
+select * from emp_source;
+
+-- create a target table   -- whatever change is captured by stream will store into target table 
+create or replace table emp_target
+( empid int,
+  empname varchar(30),
+  salary float,
+  age int,
+  dept varchar(15),
+  location varchar(20)
+);
+
+select * from emp_source;
+select * from emp_target;
+
+-- create a stream 
+create or replace stream emp_stream on table emp_source;
+
+-- insert some records
+insert into emp_source values
+(7, 'ayushi', 80000, 35, 'sales', 'bangalore'),
+(8, 'ash', 45000, 26, 'sales', 'hyderabad');
+
+select * from emp_stream;
+
+begin transaction ;
+
+-- updating (storing) records captured by stream into target table
+insert into emp_target
+select empid, empname , salary , age, dept , location from emp_stream
+where METADATA$ACTION = 'INSERT' and METADATA$ISUPDATE = False ; 
+
+commit;
+
+select * from emp_target;
+select * from emp_stream;
+
+--------------------------------------- STREAMS ON EXTERNAL TABLE ----------------------------------------------------------
+----------------------------
+-- Create file format object
+CREATE OR REPLACE FILE FORMAT csv_ff
+    type = csv
+    field_delimiter = ','
+    skip_header = 1
+    empty_field_as_null = TRUE;
+    
+-- Create storage integration object
+create or replace storage integration sky_aws_int
+  TYPE = EXTERNAL_STAGE
+  STORAGE_PROVIDER = S3
+  ENABLED = TRUE 
+  STORAGE_AWS_ROLE_ARN = 'arn:aws:iam::713405064877:role/sky_aws_admin'
+  STORAGE_ALLOWED_LOCATIONS = ('s3://skybucket01/pipes/')
+  COMMENT = 'Integration with aws s3 buckets' ;    
+    
+ 
+-- Create stage object with integration object & file format object
+
+create or replace stage ext_stage
+url = 's3://skybucket01/pipes/'
+storage_integration = sky_aws_int
+file_format = csv_ff ; 
+
+-- list stage
+list @ext_stage;
+
+-- create table  -- user_email
+create or replace external table user_external (
+        id number as(value:c1::number),
+        first_name varchar as (value:c2::varchar),
+        last_name varchar as (value:c3::varchar),
+        email varchar as (value:c4::varchar),
+        gender varchar as (value:c5::varchar),
+        aboutme varchar as (value:c6::varchar)
+)
+with
+location = @ext_stage
+pattern = '.*user.*'
+file_format = csv_ff ;
+
+select * from user_External;
+
+-- create a stream on extt table 
+create or replace stream extt_stream on external table user_External
+insert_only = true ;  -- standard stream can not be created on extt table 
+
+select * from extt_stream;
+
+-- Now whenever new data files are arriving at s3 location , stream will capture them.
+
+
+
+------------------------------ RENETION PERIOD = 0 ------------------
+
+-- create a source table
+create or replace table emp_retention
+( empid int,
+  empname varchar(30),
+  salary float,
+  age int,
+  dept varchar(15),
+  location varchar(20) )
+ DATA_RETENTION_TIME_IN_DAYS = 0
+;
+
+show tables in schema streams;
+desc table emp_retention;
+
+-- inserting records to source table
+insert into emp_retention values
+(1, 'amar', 80000, 35, 'sales', 'bangalore'),
+(2, 'bharath', 45000, 26, 'sales', 'hyderabad'),
+(3, 'charan', 76000, 34, 'technology', 'chennai'),
+(4, 'divya', 52000, 28, 'hr', 'hyderabad'),
+(5, 'gopal', 24500, 22, 'technology', 'bangalore'),
+(6, 'haritha', 42000, 27, 'hr', 'chennai') ;
+
+
+-- create a stream 
+create or replace stream emp_reten on table emp_retention;
+
+select * from emp_reten;
+
+-- insert some records
+insert into emp_retention values
+(7, 'ayushi', 80000, 35, 'sales', 'bangalore'),
+(8, 'ash', 45000, 26, 'sales', 'hyderabad');
+
+select * from emp_retention;
+
+select * from emp_reten;
+
+
+
+

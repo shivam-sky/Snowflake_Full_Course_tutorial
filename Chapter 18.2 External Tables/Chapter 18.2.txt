@@ -1,0 +1,149 @@
+               =================================== EXTERNAL TABLES ======================================
+/*               
+-- Snowflake External tables allow you to query the files stored in external stage like a regular table,
+   that means without moving that data from files to Snowflake tables.
+External tables access the files stored in external stage area such as Amazon $3, GCP bucket, or Azure blob storage.
+External tables store metadata about these data files, such as value(complete record), the filename and file row number.
+External tables are read-only, therefore no DML operations can be performed on them.
+But we can use external tables for query and join operations.
+Views and Materialized views can be created against external tables.
+Querying data from external tables is likely slower than querying database tables.
+Advantage of external table is you can analyze the data with out storing it in Snowflake.                   
+We will see how to create external tables on stages using internal and external stages.
+*/
+               =================== From External stages (Amazon S3 cloud) =========================
+               
+USE DATABASE sky;
+
+-- Create a schema for External Tables
+CREATE or replace schema ext_tble;
+
+----------------------------
+-- Create file format object
+CREATE OR REPLACE FILE FORMAT csv_ff
+    type = csv
+    field_delimiter = ','
+    skip_header = 1
+    empty_field_as_null = TRUE;
+    
+-- Create storage integration object
+create or replace storage integration sky_aws_int
+  TYPE = EXTERNAL_STAGE
+  STORAGE_PROVIDER = S3
+  ENABLED = TRUE 
+  STORAGE_AWS_ROLE_ARN = 'arn:aws:iam::713405064877:role/sky_aws_admin'
+  STORAGE_ALLOWED_LOCATIONS = ('s3://skybucket01/pipes/')
+  COMMENT = 'Integration with aws s3 buckets' ;    
+    
+ 
+-- Create stage object with integration object & file format object
+
+create or replace stage ext_stage
+url = 's3://skybucket01/pipes/'
+storage_integration = sky_aws_int
+file_format = csv_ff ; 
+
+-- list stage
+list @ext_stage;
+
+-- create a external table in simple way   -- 1st method 
+create or replace external table user_email_ext
+with 
+location = @ext_stage  -- /01_sample_user_email.csv
+pattern = '.*user.*'
+file_format = csv_ff ; 
+
+select * from user_email_ext;
+
+-----------------------------------------------------------------------------------------------
+--creating another table to get data in tabular format
+
+create or replace external table user_external (
+      id number as (value:c1::number),
+      first_name varchar as (value:c2::varchar),
+      last_name varchar as (value:c3::varchar),
+      email varchar as (value:c4::varchar),
+      gender varchar as (value:c5::varchar),
+      aboutme varchar as (value:c6::varchar) 
+)
+with 
+location = @ext_stage
+pattern = '.*user.*'
+file_format = csv_ff ;
+
+select * from user_external;
+
+-----------------------------------------------------
+
+-- run queries for analysis
+select * from user_external where gender = 'F';
+select * from user_external where email like '%@gmail.com';
+
+-- to see the external tables 
+desc external table user_external;
+
+show external tables;
+
+-- to see the files it is referring 
+select distinct metadata$filename from user_external;
+
+
+==================================================================================================================
+
+
+
+
+
+
+
+
+
+
+
+=============================================================================================================================
+============================================================================================================
+--                                  External tables using Internal stages (Local Machine)
+
+It is not possible to create external table on internal stage 
+
+
+-- Create file format object
+CREATE OR REPLACE FILE FORMAT csv_ff
+    type = csv
+    field_delimiter = ','
+    skip_header = 1
+    empty_field_as_null = TRUE;
+    
+-- create a stage
+create or replace stage int_stage
+file_format = csv_ff;
+
+-- list a stage
+list @int_stage;
+
+-- uploading to int stage
+
+
+--creating another table to get data in tabular format in internal stage
+
+create or replace external table user_external (
+      id number as (value:c1::number),
+      first_name varchar as (value:c2::varchar),
+      last_name varchar as (value:c3::varchar),
+      email varchar as (value:c4::varchar),
+      gender varchar as (value:c5::varchar),
+      aboutme varchar as (value:c6::varchar) 
+)
+with 
+location = @int_stage/01_sample_user_email.csv.gz
+file_format = csv_ff ;
+
+
+NOTE : WE CAN NOT CREATE EXT
+
+
+
+
+
+
+

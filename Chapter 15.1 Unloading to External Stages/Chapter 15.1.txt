@@ -1,0 +1,72 @@
+                       ==================================================
+                        Unloading data to external cloud storage locations
+                       =================================================== 
+ ===================
+Unloading Options
+===================
+OVERWRITE = TRUE | FALSE - Specifies to Overwrite existing files
+SINGLE = TRUE | FALSE - Specifies whether to generate a single file or multiple files
+MAX_FILE_SIZE = NUMBER - Maximum file size
+INCLUDE_QUERY_ID = TRUE | FALSE - Specifies whether to uniquely identify unloaded files by including a universally unique identifier
+DETAILED_OUTPUT = TRUE | FALSE - Shows the path and name for each file, its size, and the number of rows that were unloaded to the file.;
+
+
+// Create storage integration object
+create or replace storage integration sky_aws_int
+  TYPE = EXTERNAL_STAGE
+  STORAGE_PROVIDER = S3
+  ENABLED = TRUE 
+  STORAGE_AWS_ROLE_ARN = 'arn:aws:iam::713405064877:role/sky_aws_admin'
+  STORAGE_ALLOWED_LOCATIONS = ('s3://skybucket01/pipes/', 's3://skybucket01/unloading/')
+  COMMENT = 'Integration with aws s3 buckets' ;
+
+
+-- altering storage integration
+ALTER STORAGE INTEGRATION sky_aws_int
+  SET STORAGE_ALLOWED_LOCATIONS = ('s3://skybucket01/unloading/');
+  
+-- create or replace file format 
+create or replace file format unloading_ff
+ type = 'csv' , field_delimiter ='|' , skip_header = 0, empty_field_as_null = true; 
+
+-- create a stage 
+create or replace stage unload_stage
+url = 's3://skybucket01/unloading/'
+storage_integration = sky_aws_int
+file_format = unloading_ff;
+
+-- copy command for unloading data to ext stage
+copy into @unload_stage
+from sky.sky.customer_psv ;
+
+list @unload_stage;
+
+
+
+
+-- copy command for unloading data to ext stage
+copy into @unload_stage/customer
+from sky.sky.customer_psv ;
+
+-- copy command for unloading data to ext stage -- max file size , overwrite
+copy into @unload_stage/customer
+from sky.sky.customer_psv 
+max_file_size = 2000000
+overwrite = true;
+
+-- copy command for unloading data to ext stage -- single
+copy into @unload_stage/custom
+from sky.sky.customer_psv 
+max_file_size = 2000000
+overwrite = true
+single = true;
+
+-- copy command for unloading data to ext stage -- detailed output
+copy into @unload_stage/custom
+from sky.sky.customer_psv 
+max_file_size = 2000000
+overwrite = true
+single = true
+detailed_output = true ;
+
+list @unload_stage;

@@ -1,0 +1,142 @@
+                  =============================INTERNAL TABLES====================================
+
+                   ==============================================================================
+                   TYPES OF TABLES  - 1. PERMANENT TABLE  2. TRANSIENT TABLE  3. TEMPORARY TABLE
+                   ==============================================================================
+
+create or replace schema sky.table_types;                          
+                          
+-- Where to see table type
+SHOW TABLES in SCHEMA sky;
+
+-- creating trans, temp table 
+CREATE OR REPLACE TRANSIENT TABLE sky.table_types.tran_table(id number);
+CREATE OR REPLACE TEMPORARY TABLE sky.table_types.temp_table(name string);
+
+SHOW TABLES in SCHEMA table_types;
+ 
+                                      ============================
+                                      PERMANENT Tables/Schemas
+                                      ============================    
+    
+create or replace table permanent(id number);   -- it's just normal table we create
+
+-- Default table type in Snowflake
+-- These are the regular and common tables
+-- Tables exists until we drop them explicitly
+-- Time travel retention period is 0-90 days depends on Snowflake edition
+-- 7 days of fail-safe period
+                                      ============================
+                                        Transient Tables/Schemas
+                                      ============================
+-- Similar to Permanent tables but with 1 day retention period
+-- No fail-safe period
+-- Tables exists until we drop them explicitly
+-- Useful when data protection is not required
+-- Defining stage tables as Transient is best practice 
+
+-- syntax for creating transient tble
+create or replace transient table <table_name>;
+
+-- create transient schema 
+create or replace transient schema sky.tran_schema;   -- all tbles in transient schema will be tranient by default
+
+create or replace table sky.tran_schema.tran_tble(id number);
+
+SHOW TABLES in SCHEMA tran_schema;
+
+-- can we alter the retention period of transient tbles ?
+alter table sky.tran_schema.tran_tble
+set data_retention_time_in_days = 2 ; 
+
+-- can we undrop tble, sc , db transient in 24 hours ?
+drop table sky.tran_schema.tran_tble;
+
+-- undrop this transient tble within 24 hours
+undrop table sky.tran_schema.tran_tble;
+
+drop schema sky.tran_schema;
+undrop schema sky.tran_schema;
+
+
+
+                                 =======================================
+                                                Temporary Tables
+                                 =======================================
+
+-- Table exists only within the session
+-- Once the session ends, table gets dropped completely and is not recoverable.
+-- They are not visible to other users or sessions
+-- 1 day retention period
+-- No fail-safe period
+-- Useful for development work
+-- Can be used in stored procedures for intermediate data storing
+-- Syntax to create temporary table is
+
+-- create a temp table
+create or replace temporary table temp_table2 (id number);
+
+
+-- creating a schema ----- NO 
+create or replace temporary schema sky.temp ;
+
+-- creating a database ----- NO 
+create or replace temporary database temp ;
+
+drop database temp;
+
+-- create 1 table 
+create or replace temporary table sky.table_types.temp_table2 (name string);
+
+insert into temp_table2 values ('shivam');
+insert into temp_table2 values ('ayushi');
+insert into temp_table2 values ('elvish');
+insert into temp_table2 values ('pranav');
+
+select * from temp_table2;  -- temp table will only be assessed from 1 session ( worksheet )
+
+-- drop and undrop
+
+drop table sky.table_types.temp_table2;
+
+undrop table sky.table_types.temp_table2;
+
+desc table temp_table2;
+
+--------------------------------------SCENARIO 1-----------------------------------------------------------------
+
+create or replace temporary table sky.table_types.temp_table2 (name string);
+
+alter table sky.table_types.temp_table2 rename to sky.table_types.temp_table3;
+
+undrop table sky.table_types.temp_table2;
+
+select * from sky.table_types.temp_table2;
+
+---------------------------------------SCENARIO 2------------------------------------------------------------------
+
+create or replace temporary table sky.table_types.sky1 (name string);
+
+create or replace table sky.table_types.sky1 (name string);
+
+insert into sky1 values ('shivam');
+insert into sky1 values ('ayushi');
+insert into sky1 values ('elvish');
+insert into sky1 values ('pranav');
+
+select * from sky1;
+
+                                        ====== POINTS TO REMEMBER ======
+
+-- We can't convert any type of table to other type
+-- We can create Transient databases and Transient schemas
+-- Tables created under Transient databases/schemas are by default Transient
+-- We can create a temporary table with same name as Perm/Tran table. If we query with that table name, 
+--  it fetches data from Temporary table in that session.
+
+-- How to find the table type?
+-- Look at the Kind' filed in SHOW TABLES properties
+
+-- for schema type we have to OPTIONS column 
+
+show schemas in database sky;

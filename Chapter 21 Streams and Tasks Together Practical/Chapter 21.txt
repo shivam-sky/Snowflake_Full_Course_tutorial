@@ -1,0 +1,248 @@
+
+------------------------------------------ Streams + Tasks ------------------------------------
+1. update insertion to target table
+2. update updation to target table
+3. update deletion to target table
+4. doing insert, update & delete at same time and updating in target table at once
+5. capture CDC in stream and updation with task ;
+
+
+-- table for stream
+create or replace table emp_source
+( empid int,
+  empname varchar(30),
+  salary float,
+  age int,
+  dept varchar(10),
+  location varchar(20)
+);
+
+-- inserting records to source table
+insert into emp_source values
+(1, 'amar', 80000, 35, 'sales', 'bangalore'),
+(2, 'bharath', 45000, 26, 'sales', 'hyderabad'),
+(3, 'charan', 76000, 34, 'technology', 'chennai'),
+(4, 'divya', 52000, 28, 'hr', 'hyderabad'),
+(5, 'gopal', 24500, 22, 'technology', 'bangalore'),
+(6, 'haritha', 42000, 27, 'hr', 'chennai') ;
+
+-- create a target table (MAIN TABLE)
+create or replace table emp_target
+( empid int,
+  empname varchar(30),
+  salary float,
+  age int,
+  dept varchar(15),
+  location varchar(20)
+);
+
+-- create a stream on emp_source table
+create or replace stream emp_stream on table emp_source;
+
+-- listing streams
+show streams in schema streams;
+
+-- cheching record of stream
+select * from emp_stream;
+
+---------------------------------------------------------------------------------------------------------
+-- inserts
+
+-- listing records of source table
+select * from emp_source;
+
+-- listing records noted by stream object
+select * from emp_stream;
+
+insert into emp_source values
+(7, 'amar', 80000, 35, 'sales', 'bangalore'),
+(8, 'bharath', 45000, 26, 'sales', 'hyderabad');
+
+-- updating records noted by stream object to the target table (MAIN)
+insert into emp_target
+select empid, empname , salary , age, dept , location from emp_stream
+where METADATA$ACTION = 'INSERT' and METADATA$ISUPDATE = False ; 
+
+-- listing updated records of target table
+select * from emp_target;
+
+-- listing recors of stream after updating them to target table -- 0
+select * from emp_stream;
+
+------------------------------------------------------------------------------------------------------------
+
+-- updates
+
+-- listing records of source table
+select * from emp_source;
+
+-- updating some records of emp_source table to observe updating stream
+update emp_source set salary=56000 where empid=2;
+update emp_source set location='Delhi' where empid=5;
+
+-- listing records after updation of tble source
+select * from emp_source;
+
+-- listing and cheching in stream about change of update
+select * from emp_stream;
+
+-- updating records noted by stream object to the target table (MAIN)
+insert into emp_target
+select empid, empname , salary , age, dept , location from emp_stream
+where METADATA$ACTION = 'INSERT' and METADATA$ISUPDATE = True ; 
+
+select * from emp_target;
+
+-- sending updated data of stream to target table 
+merge into emp_target e
+using emp_stream s
+ on e.empid = s.empid
+when matched 
+    and s.metadata$action ='insert'
+    and s.metadata$isupdate ='true'
+then update 
+    set e.empname = s.empname,
+  e.salary = s.salary,
+  e.age = s.age,
+  e.dept = s.dept,
+  e.location = s.location ;   
+
+-- listing records in target table after sending
+select * from emp_target;
+
+-- listing records in stream object  -- 0 
+select * from emp_stream;
+
+--------------------------------------------------------------------------------------------------------
+
+-- deletes
+
+-- listing records in source tble 
+select * from emp_source;
+
+-- deleting 1 record in source table 
+delete from emp_source where empid in (3,4);
+
+-- verifying deleted record 
+select * from emp_source;
+
+-- verifying the deleted record noted in stream or not 
+select * from emp_stream;
+
+-- sending deleted record to target table 
+merge into emp_target e
+using emp_stream s
+ on e.empid = s.empid
+when matched 
+    and s.metadata$action ='delete'
+    and s.metadata$isupdate ='false'
+then delete;
+
+-- verifying deleted record in target table 
+select * from emp_target;
+
+-- verifying the stream records -- 0
+select * from emp_stream;
+
+-----------------------------------------------------------------------------------------------------------------------
+
+-- all changes at a same time ( INSERT, UPDATE, DELETE )
+
+-- listing records in source table 
+select * from emp_source;
+
+-- inserting some records in source table 
+insert into emp_source values
+(7, 'janaki', 61000, 29, 'sales', 'pune'),
+(8, 'kamal', 92000, 33, 'technology', 'bangalore');
+
+-- updating some records in source table 
+update emp_source 
+set salary=85000, location='hyderabad' where empid=1;
+
+-- deleting some records in source table 
+delete from emp_source where empid in (6);
+
+-- verifying the updation, deletetion , insertion in source table 
+select * from emp_source;
+
+-- verifying the data change capture in stream 
+select * from emp_stream;
+
+-- sending all updated data ( deletion, insertion, updation ) into target table
+merge into emp_target t
+using emp_stream s
+ on t.empid = s.empid
+when matched
+    and s.metadata$action ='delete' 
+    and s.metadata$isupdate = 'false'
+    then delete                   
+when matched
+    and s.metadata$action ='insert' 
+    and s.metadata$isupdate  = 'true'       
+    then update 
+    set t.empname = s.empname,
+  t.salary = s.salary,
+  t.age = s.age,
+  t.dept = s.dept,
+  t.location = s.location
+when not matched
+    and s.metadata$action ='insert'
+ and s.metadata$isupdate  = 'false'
+    then insert( empid, empname, salary, age, dept, location)
+ values(s.empid, s.empname, s.salary, s.age, s.dept, s.location);
+
+-- verfying sent data in target table 
+select * from emp_target;
+
+-- verifying data in stream -- 0 
+select * from emp_stream;
+
+-----------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------
+                                       DOING UPDATION WITH TASKS ;
+-- updating( sending ) updated data of source tble to target table by using tasks without doing query again and again
+
+-- with tasks
+
+-- creating task for updating data into target table when there is some change in source table (insert, update & delete)
+create or replace task emp_task
+    warehouse = skytraining
+    schedule = '1 minute'
+    when system$stream_has_data('sky.tasks.emp_stream')
+as  /*
+insert into emp_target  -- for updation 
+select empid, empname , salary , age, dept , location from emp_stream
+where METADATA$ACTION = 'INSERT' and METADATA$ISUPDATE = True  */
+
+insert into emp_target  -- for insertion 
+select empid, empname , salary , age, dept , location from emp_stream
+where METADATA$ACTION = 'INSERT' and METADATA$ISUPDATE = False ; 
+
+
+-- resuming the task
+alter task emp_task resume;
+
+-- verifying the data in source table 
+select * from emp_source;
+
+-- doing insertion, updation, deletion in source table for task -- we will update this time by using task in target table
+-- inserting in source table
+insert into emp_source values
+(9, 'latha', 47000, 25, 'hr', 'chennai');
+
+-- updating in source table
+update emp_source 
+set salary=67000 where empid=7;
+
+-- deleting in source table 
+delete from emp_source where empid in (8);
+
+-- listing records in stream ( verifying the change captured )
+select * from emp_stream;
+
+-- now checking the updated data in target table after 5 min because task running time is 5 minute
+select * from emp_target;
+
+-- verifying data in stream after task runned successfully
+select * from emp_stream;

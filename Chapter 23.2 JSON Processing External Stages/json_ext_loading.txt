@@ -1,0 +1,193 @@
+---------------------------------------
+=================================================================================================================================== ;
+----------------------------------------- Loading json data from external stage -----------------------------
+
+-- Create storage integration object
+create or replace storage integration sky_aws_int
+  TYPE = EXTERNAL_STAGE
+  STORAGE_PROVIDER = S3
+  ENABLED = TRUE 
+  STORAGE_AWS_ROLE_ARN = 'arn:aws:iam::713405064877:role/sky_aws_admin'
+  STORAGE_ALLOWED_LOCATIONS = ('s3://skybucket01/csv/', 's3://skybucket01/others/' , 's3://skybucket01/pipes/')
+  COMMENT = 'Integration with aws s3 buckets' ;
+
+-- creating ff
+create or replace file format my_json
+  type = json
+  strip_outer_array = true;
+
+-- creating stage 
+CREATE OR REPLACE STAGE json_stage
+    STORAGE_INTEGRATION = sky_aws_int
+    file_format = my_json
+    URL = 's3://skybucket01/others/';
+
+-- Listing files in the stage
+LIST @json_stage;
+
+-- Creating Stage Table to store RAW Data	
+CREATE OR REPLACE TABLE author_2
+(json_data variant);
+
+-- copy data from ext stage to table
+copy into author_2
+from @json_stage/author.json
+file_format = my_json ;
+
+-- list table records
+select * from author_2;
+
+
+--------------------------------- PARSHING OF JSON DATA INTO COLUMN FORMAT ----------------------------
+
+-- accessing data from ext stage directly
+select $1:AuthorName from @json_stage/author.json (file_format => 'my_json');
+
+===================================================================== ;
+-- Accessing simple json data --------------
+
+-- querying (listing) individual columns with json type data 
+Select 
+    JSON_DATA:AuthorName::string as AuthorNAme,
+    JSON_DATA:Category::string
+from author_2;    
+
+-- use $ notation for accessing
+select $1:AuthorName from author_2;
+
+===================================================================== ;
+-- Accessing array json data --------------
+
+-- getting the array size
+select array_size(JSON_DATA:Category[0]:best_edition) size from author_2;
+
+-- listing records of array
+select JSON_DATA:Category[0]:best_edition from author_2;
+
+===================================================================== ;
+-- Accessing Nested Json Data
+
+-- If u want to access nested data --> by giving indexing
+select 
+    JSON_DATA:AuthorName,
+    JSON_DATA:Category[0]:CategoryName,
+    JSON_DATA:Category[1]:CategoryName
+from author_2;    
+
+-- other nested accessing examples
+
+select 
+    JSON_DATA:AuthorName,
+    JSON_DATA:Category[0]:Genre[0]:GenreName,
+    JSON_DATA:Category[0]:Genre[0]:Novel,
+    JSON_DATA:Category[0]:Genre[0]:Novel[1]:Sales
+from author_2;    
+
+======================================================================= ;
+-------- PARSHING JSON DATA TO GET COLUMNS and TABLE
+
+select * from author_2;
+
+-- parshing json data to columns and it will remove quotes -- by giving datatypes of columns and casting to specific datatype
+select 
+  JSON_DATA:AuthorName::String as Author_Name,
+  JSON_DATA:Category[0]:CategoryName::string as Fiction_Category ,
+  JSON_DATA:Category[1]:CategoryName::string as Non_Fiction_Category
+from author_2;  
+
+-- more detailed
+select 
+  JSON_DATA:AuthorName::String as Author_Name,
+  JSON_DATA:Category[0]:CategoryName::string as Fiction_Category ,
+  JSON_DATA:Category[0]:Genre[0]:GenreName::string, 
+  JSON_DATA:Category[0]:Genre[1]:GenreName::string, 
+  JSON_DATA:Category[1]:CategoryName::string,
+  JSON_DATA:Category[1]:Genre[0]:GenreName::string, 
+  JSON_DATA:Category[1]:Genre[1]:GenreName::string  
+from author_2;  
+
+==================================================================================================================
+
+We have 2 methods for getting (loading) data into our main table
+    1. By using flattening
+    2. By just parsing all data and UNION ALL
+
+
+-------------------------------- FLATTENING --------------------------------------------------------------------------------------
+1. METHOD ;
+-- Flattening is a process of unpacking the semi-structured data into a columnar format by converting arrays into different rows of data.
+
+-- Using the LATERAL FLATTEN function we can explode arrays into individual JSON objects. 
+
+-- flattening data into columnar format -- Converting diff arrays into rows --> 
+select 
+   JSON_DATA:AuthorName::string as Author,
+   VALUE:CategoryName::string as CategoryName from author_2
+,LATERAL FLATTEN (input => JSON_DATA:Category);   
+   
+-- flattening all data into rows from json arrays
+select
+    JSON_DATA:AuthorName::string as Author_Name,
+    Flatten_Category.VALUE:CategoryName::string as Category_Name,
+    Flatten_Genre.VALUE:GenreName::string as Genre_Name,
+    Flatten_Novel.VALUE:Novel::string as Novel_Name,
+    Flatten_Novel.VALUE:Sales::number as Sales_in_Millions
+from author_2
+,LATERAL FLATTEN (input => JSON_DATA:Category) as Flatten_Category
+,LATERAL FLATTEN (input => Flatten_Category.VALUE:Genre) as Flatten_Genre
+,LATERAL FLATTEN (input => Flatten_Genre.VALUE:Novel) as Flatten_Novel
+
+-- loading this flattend data (column type) into our main table --
+create or replace table authors_data_2 as
+select
+    JSON_DATA:AuthorName::string as Author_Name,
+    Flatten_Category.VALUE:CategoryName::string as Category_Name,
+    Flatten_Genre.VALUE:GenreName::string as Genre_Name,
+    Flatten_Novel.VALUE:Novel::string as Novel_Name,
+    Flatten_Novel.VALUE:Sales::number as Sales_in_Millions
+from author_2
+,LATERAL FLATTEN (input => JSON_DATA:Category) as Flatten_Category
+,LATERAL FLATTEN (input => Flatten_Category.VALUE:Genre) as Flatten_Genre
+,LATERAL FLATTEN (input => Flatten_Genre.VALUE:Novel) as Flatten_Novel
+
+-- listing records of table
+select * from authors_data_2;
+
+
+----------------------------------------------------------------------------------------------------------------------------------
+2. METHOD -- substr, substring, parse the data in copy command
+  
+  
+  --- create a table 
+  create or replace table home_sales (
+   city string,
+  zip string,
+  state string,
+  type string default 'Residential',
+  sale_date timestamp_ntz,
+  price string
+  );
+
+-- list a ext stage 
+list @json_stage;
+
+-- upload a file sale.json to ext stage means bucket
+
+-- copy command
+copy into home_sales(city, state, zip , sale_date, price)
+from (select substr($1:location.state_city,4),
+             substr($1:location.state_city,1,2),
+             $1:location.zip,
+             to_timestamp_ntz($1:sale_date),
+             $1:price
+      from @json_stage/sales.json)
+      on_error = "CONTINUE";
+
+-- listing the records
+select * from home_sales;
+
+
+
+
+
+

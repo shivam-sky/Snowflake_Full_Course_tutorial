@@ -1,0 +1,46 @@
+-- Two types of cache 
+-- 1. RESULTS CACHE      2. LOCAL CACHE
+
+----------------------------------------------RESULTS CACHE------------------------------
+
+-- Query is fetching results from Storage layer(Remote Disk) ---- 1st time --> more time
+SELECT * FROM  sky.sky.customer_bigdata;  -- 515ms
+
+SELECT * FROM  sky.sky.customer_bigdata; -- 60ms
+
+-- fetching metadata 
+select count(*) from customer_bigdata; -- 92ms
+
+-- fetched the record on condition
+select * from customer_bigdata where gender = 'F';   -- 400ms  -- 15, 069
+select * from customer_bigdata where gender = 'M';   -- 422ms  -- 14, 931
+
+-- fetching record by giving column names & column rearranging
+select salutation , first_name , last_name , gender from customer_bigdata; -- 321ms
+select first_name , last_name from customer_bigdata; -- 300ms
+select last_name , first_name from customer_bigdata; -- 318ms
+
+
+===========================================================================================================================
+                                    --     LOCAL DISK CACHE  -- 
+
+-- turn off results cache
+alter session set use_cached_result = false;
+
+-- Query is fetching results from Storage layer(Remote Disk) ---- 1st time --> more time
+SELECT * FROM  sky.sky.customer_bigdata;  --  L => 605ms            R => 515ms
+
+SELECT * FROM  sky.sky.customer_bigdata; --  L => 425ms                R => 60ms
+
+-- fetching metadata 
+select count(*) from customer_bigdata; -- L => 27ms          R => 92ms
+
+-- fetched the record on condition
+select * from customer_bigdata where gender = 'F'; --  L => 406ms     R => -- 400ms  -- 15, 069
+select * from customer_bigdata where gender = 'M';   --L => 358ms     R =>    422ms  -- 14, 931
+
+-- fetching record by giving column names & column rearranging
+select salutation , first_name , last_name , gender from customer_bigdata; L => 483ms    -- 321ms
+select first_name , last_name from customer_bigdata;  L => 309ms   R -- 300ms
+select last_name , first_name from customer_bigdata;  L => 278ms   R -- 318ms
+

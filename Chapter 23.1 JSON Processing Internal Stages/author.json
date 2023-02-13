@@ -1,0 +1,115 @@
+[
+	{
+		"AuthorName": "Author-1",
+		"Category": [{
+				"CategoryName": "Fiction",
+				"best_edition": ["py","js"],
+				"Genre": [{
+						"GenreName": "Action and Adventure",
+						"Novel": [{
+								"Novel": "Novel-1",
+								"Sales": "200"
+							},
+							{
+								"Novel": "Novel-2",
+								"Sales": "850"
+							}
+						]
+					},
+					{
+						"GenreName": "Romance",
+						"Novel": [{
+							"Novel": "Novel-3",
+							"Sales": "400"
+						}]
+					}
+				]
+			},
+			{
+				"CategoryName": "NonFiction",
+				"Genre": [{
+					"GenreName": "Autobiography",
+					"Novel": [{
+						"Novel": "Novel-4",
+						"Sales": "900"
+					}]
+				}]
+			}
+		]
+	},
+	{
+		"AuthorName": "Author-2",
+		"Category": [{
+				"CategoryName": "Fiction",
+				"best_edition": ["java","sql","jsp"],
+				"Genre": [{
+						"GenreName": "Action and Adventure",
+						"Novel": [{
+							"Novel": "Novel-5",
+							"Sales": "340"
+						}]
+					},
+					{
+						"GenreName": "Crime",
+						"Novel": [{
+								"Novel": "Novel-6",
+								"Sales": "940"
+							},
+							{
+								"Novel": "Novel-7",
+								"Sales": "540"
+
+							}
+						]
+					}
+				]
+			}
+		]
+	},
+	{
+		"AuthorName": "Author-3",
+		"Category": [{
+				"CategoryName": "Fiction",
+				"best_edition": ["ty","js"],
+				"Genre": [{
+						"GenreName": "Romance",
+						"Novel": [{
+								"Novel": "Novel-8",
+								"Sales": "820"
+							},
+							{
+								"Novel": "Novel-9",
+								"Sales": "620"
+							}
+						]
+					},
+					{
+						"GenreName": "Thriller",
+						"Novel": [{
+							"Novel": "Novel-10",
+							"Sales": "770"
+						}]
+					}
+				]
+			},
+			{
+				"CategoryName": "NonFiction",
+				"Genre": [{
+						"GenreName": "History",
+						"Novel": [{
+							"Novel": "Novel-11",
+							"Sales": "450"
+						}]
+					},
+					{
+						"GenreName": "Travel",
+						"Novel": [{
+							"Novel": "Novel-12",
+							"Sales": "150"
+						}]
+					}
+				]
+			}
+		]
+	}
+]

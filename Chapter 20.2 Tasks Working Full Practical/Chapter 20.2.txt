@@ -1,0 +1,282 @@
+
+1. simple task with time
+2. Task with cron method
+3. Cloning a task
+4. Task scheduling Examples
+5. Task history
+6. DAG of tasks
+7. Task on stored procedures
+
+create or replace schema tasks;
+-- we can not put schedule time in seconds or hour of task-- we can set only minute
+-- we can clone a task
+-- we have to resume the task after creation
+-- we can not perform multiple sql statements in task, we can call procedure
+-- we can set task schedule time till 11520 min that is 8 days
+
+-- Snowflake Tasks & Task Tree are two important components in snowflake to automate your SQL script as well as 
+-- automate your workflow ;
+
+
+-- create a sample table for inserting data using tasks
+create or replace table customer 
+(
+    id int autoincrement start = 1 increment =1,
+    name varchar(20),
+    location varchar(20),
+    load_time timestamp
+);
+
+-- create task to insert data for every minute to customer table 
+create or replace task customer_task
+  warehouse = skytraining
+  schedule = '1 minute'
+as 
+insert into customer (name, location,load_time)
+values ('aman', 'Lucknow', current_timestamp);
+ 
+-- listing records in table
+select * from customer;
+
+-- to see tasks
+show tasks;
+
+-- describing the task
+desc task customer_task;
+
+-- we have to resume the task so that our task should run and do their work
+-- starting and suspending tasks
+alter task customer_task resume;
+alter task customer_task suspend;
+
+-- view the data in table loaded or not after 1 minute
+select * from customer;
+
+---------------------------------------- TASK WITH CRON METHOD ------------------------------------------------------------------
+
+-- using cron to load the data for every minute
+create or replace task customer_cron
+  warehouse = skytraining
+  schedule = 'using cron * * * * * utc'   -- 0 - 6 --> 0 - SUN 
+as 
+insert into customer (name, location,load_time)
+values ('ankit', 'Delhi', current_timestamp);
+ 
+select current_timestamp;
+ 
+desc task  customer_cron;
+-- resume & suspend a task    
+alter task customer_cron resume;
+alter task customer_cron suspend;
+
+-- view the data in table after resuming 1 minute
+select * from customer;
+
+====================================================
+-- some more examples of schedules using cron
+
+-- every day at 7 am utc timezone  -- 7:00 am
+schedule = 'using cron 0 7 * * * utc'
+
+-- every day at 10 am and 10 pm -- 10:00 am   , 10:00 pm  --> 7-8 , 10,19
+schedule = 'using cron 0 10,22 * * * utc'
+
+-- every month last day at 11pm   -- 11:00 pm
+schedule = 'using cron 0 23 l * * utc'
+
+-- every monday at 6: 30 am 
+schedule = 'using cron 30 6 * * 1 utc'
+
+-- lets clone the task and it works
+create or replace task customer_copy CLONE customer_cron;
+desc task customer_copy;
+
+
+
+------------------------- TASK SCHEDULING EXAMPLES WITH seconds , minutes , hour --------------------------------------------------------
+-- WE CAN USE JUST A MINUTES FOR SCHEDULING A TASK 
+
+-- task with seconds
+create or replace task customer_sec
+  warehouse = skytraining
+  schedule = '60 second'
+as 
+insert into customer (name, location,load_time)
+values ('aman', 'Lucknow', current_timestamp);
+
+-- task with hours 
+create or replace task customer_hour
+  warehouse = skytraining
+  schedule = '1 hour'
+as 
+insert into customer (name, location,load_time)
+values ('aman', 'Lucknow', current_timestamp);
+
+-- task with half minute
+create or replace task customer_half
+  warehouse = skytraining
+  schedule = '0.5 minute'
+as 
+insert into customer (name, location,load_time)
+values ('aman', 'Lucknow', current_timestamp);
+
+
+-- task with minus time
+create or replace task customer_minus
+  warehouse = skytraining
+  schedule = ' -1 minute'
+as 
+insert into customer (name, location,load_time)
+values ('aman', 'Lucknow', current_timestamp);
+
+
+===============================================================================================================
+                              creating dag of tasks  [ Directed Acyclic Graph ]
+--=============================================================================================================== 
+/* ROOT TABLE --> EMP_ADMIN 
+   CHILD TABLES --> SALES TABLE , HR TABLE , MARKETTING TABLE
+    First we will create task on emp_admin root table then child tables tasks will be automatically executed in order
+ We will get sales dept data in sales dept
+ We will get hr dept data in hr dept
+ We will get market dept data in market dept    */ ;
+
+-- create a root table 
+create or replace table emp_admin
+(empid int autoincrement start = 1 increment =1, 
+ emp_name varchar(20),
+ dept_name varchar(44),
+ load_time timestamp
+);
+
+select * from emp_admin;
+
+-- root task 
+create or replace task emp_admin
+  warehouse = skytraining
+  schedule = '1 minute'
+as
+insert into emp_admin(emp_name, dept_name,load_time)
+values ('amit' , 'hr', current_timestamp);
+
+desc task emp_admin;
+
+--=====================================child tasks - sales , hr , market |||||  Root task -- emp_Admin
+
+-- CHILD task for loading sales data into sales table 
+create or replace task sales_task
+  warehouse = skytraining
+  after emp_admin
+as
+create or replace table sales_tble
+as
+select * from emp_admin
+ where dept_name = 'sales' ; 
+
+desc task sales_task; 
+
+--====================================
+
+-- task for loading hr table -- not mentioning warehouse, will use snowflake compute resources
+create or replace task hr_task
+  after emp_admin
+as
+create or replace table hr_tble
+as
+select * from emp_admin
+ where dept_name = 'hr' ; 
+
+desc task hr_task; 
+
+--==========================================
+
+-- task for loading marketing table -- not mentioning warehouse, will use snowflake compute resources
+  
+create or replace task market_task
+as
+create or replace table market_tble
+as
+select * from emp_admin
+ where dept_name = 'market' ; 
+
+desc task market_task; 
+
+-- add dependencies
+alter task market_task add after sales_task;
+alter task market_task add after hr_task;
+
+-- start the tasks - child tasks first then parent
+alter task market_task resume ;
+alter task hr_task resume ;
+alter task sales_task resume ;
+alter task emp_admin resume ;
+
+
+show tasks ;
+
+select * from emp_admin;
+select * from sales_tble;
+select * from hr_tble;
+select * from market_tble;
+
+
+-- altering the task
+alter task emp_admin
+modify
+as
+insert into emp_admin(emp_name, dept_name,load_time)
+values ('ankit' , 'market', current_timestamp);
+
+alter task emp_admin suspend;
+
+
+
+
+======================================================================================================================
+                                        TASK HISTORY
+======================================================================================================================                                        
+-- How to check if it is running
+-- task_history() is a table function              
+-- to see all tasks history with last executed task first
+select * from table (information_schema.task_history()) order by scheduled_time desc;
+
+
+
+
+------------------------------------------------------------------------------------------------------------------------
+------------------------------------------ TASK ON STORED PROCEDURES -----------------------------------
+
+-- employee table for task
+create or replace table employee(emp_id number, emp_name varchar, emp_Address varchar);
+
+create sequence if not exists emp_id;
+
+-- procedure for inserting records on  table 
+CREATE OR REPLACE PROCEDURE employee_insert(name varchar,address varchar)  
+RETURNS VARCHAR  
+LANGUAGE JAVASCRIPT  
+AS  
+$$  
+var command = "INSERT INTO Employee (emp_id, emp_name,emp_address) VALUES (emp_id.nextval, '"+NAME+"','"+ADDRESS+"')";  
+var cmd1_dict = {sqlText: command};  
+var stmt = snowflake.createStatement(cmd1_dict);  
+var rs = stmt.execute();  
+return 'success';  
+$$;  
+
+-- call the procedure
+call employee_insert('pranav' , 'Delhi');
+
+select * from employee;
+
+--creating task and calling a stored procedure for insertion of records
+create or replace task emp_task
+warehouse=skytraining
+schedule = '1 minute'
+as
+call employee_insert('dipam' , 'Banglore');
+
+desc task emp_task;
+
+alter task emp_task resume;
+
+

@@ -1,0 +1,164 @@
+------------------------------------------DATA SHARING TO SNOWFLAKE USERS--------------------------------------------
+
+-- data share properties -- 
+-- grant usage --  database , schema
+-- grant select -- tables 
+
+--creating database data_sharing 
+create or replace database share_db;
+
+-- create a schema
+create or replace schema share_db.sky;
+
+-- creating table
+create or replace table customer_csv (
+	customer_pk number(38,0),
+	salutation varchar(10),
+	first_name varchar(20),
+	last_name varchar(30),
+	gender varchar(1),
+	marital_status varchar(1),
+	day_of_birth date,
+	birth_country varchar(60),
+	email_address varchar(50),
+	city_name varchar(60),
+	zip_code varchar(10),
+	country_name varchar(20),
+	gmt_timezone_offset number(10,2),
+	preferred_cust_flag boolean,
+	registration_time timestamp_ltz(9)
+);
+
+-- ff for loading
+CREATE OR REPLACE file format fileformat_share
+    type = csv
+    field_delimiter = ','
+    skip_header = 1
+    field_optionally_enclosed_by = '\042'
+    empty_field_as_null = TRUE;
+
+-- creating a ext stage
+create or replace stage aws_stage
+url='s3://skybucket01/pipes/'
+STORAGE_INTEGRATION = sky_aws_int;
+
+list @aws_stage;
+
+copy into share_db.sky.customer_csv
+from @aws_stage
+file_format= fileformat_share
+files = ('customer_1.csv') ;
+
+select * from share_db.sky.customer_csv;
+
+  -------------------------  things to do in sender's account (provider account)  ---------------------------------
+
+--creating share
+create or replace share coding_share;
+
+--granting permission to share to use database
+grant usage on database share_db to share coding_share;
+
+--granting permission to schema to use share
+grant usage on schema share_db.sky to share coding_share;
+
+--granting permission to table to use share
+grant select on table share_db.sky.customer_csv to share coding_share;
+
+// How to share complete schema
+GRANT SELECT ON ALL TABLES IN SCHEMA data_share.public TO SHARE coding_share;
+
+// How to share complete database
+GRANT SELECT ON ALL TABLES IN DATABASE data_share TO SHARE coding_share;
+
+-- checking(showing) grants 
+show grants to share coding_share;
+
+-- giving a account name and access of share to this account
+Alter share coding_share add account = cj08185 ;
+
+
+------------------------- things to do in consumer account ( receiver's account ) ------------------------------------------
+
+
+-- things to do in consumer account ----- ( PRANAV )  -- consumer
+
+
+show shares;
+
+create or replace database sky_coding_db_share from share jp02361.skycoding_share;
+
+select * from sky_coding_db_share.sky.customer_csv;
+
+                           -----things to do in CONSUMER (receiver's) snowflake account---------------
+
+--listing all shares in receiver's account
+show shares;
+
+--describing share
+desc share <accountname>.<sharename>;
+desc share <accountname>.<sharename>;
+
+--creating database from sender's account
+create or replace database share_data from share <accountname>.<sharename>;
+
+--verifying data in receiver's account
+select * from db.schema.tblname;
+
+
+===============================================================================================================================
+===============================================================================================================================
+
+
+------------------------------------------DATA SHARING TO NON-SNOWFLAKE USERS--------------------------------------------
+
+--creating share
+create or replace share coding_share;
+
+--granting permission to share to use database
+grant usage on database share_db to share coding_share;
+
+--granting permission to schema to use share
+grant usage on schema share_db.sky to share coding_share;
+
+--granting permission to table to use share
+grant select on table share_db.sky.customer_csv to share coding_share;
+
+----things to do in provider's account(sender's)----
+
+-- Creating a reader account
+CREATE MANAGED ACCOUNT CUSTOMER_ANALYST
+ADMIN_NAME = cust_analyst,
+ADMIN_PASSWORD = 'Sky@9090#',    -- VF76805
+TYPE = READER;                   -- https://vf76805.ap-southeast-1.snowflakecomputing.com
+
+-- How to see reader accounts
+SHOW MANAGED ACCOUNTS;  -- LO11346
+
+-- Add reader account to share object
+ALTER SHARE sky_coding_share  ADD ACCOUNT = LO11346;
+
+-- if u face any error in reader account
+ALTER SHARE sky_coding_share  ADD ACCOUNT =  LO11346
+SHARE_RESTRICTIONS=false;
+
+---------things to do in Reader's side (receiver's side)----
+
+SHOW SHARES;
+
+DESC SHARE <accountname>.customer_share;
+
+-- Get url of reader account and login to that reader account
+
+-- Get inbound share details
+SHOW SHARES;
+
+-- Create a database to consume the shared data
+CREATE DATABASE data_share FROM SHARE <accountname>.customer_share;
+
+-- Query the shared tables
+SELECT * FROM data_share.public.customer_csv_share;
+
+-------------
+---- Dropping Reader's account
+DROP MANAGED ACCOUNT CUSTOMER_ANALYST; 

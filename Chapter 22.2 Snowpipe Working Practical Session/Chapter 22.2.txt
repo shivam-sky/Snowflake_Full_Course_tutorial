@@ -1,0 +1,132 @@
+
+========================================================================================================================
+=============================================== SNOWPIPE LOADING ===============================================;
+
+                   -- configuring snowflake with aws with SNS TOPIC
+                   
+1. open aws console and search for --> SNS
+2. click on topics
+3. create a new topic -- STANDARD --> NAME --> ACCESS POLICY AS EVERYONE --> CREATE TOPIC 
+4. Copy ARN of SNS somewhere
+5. Open snowflake and give this command wwith your SNS ARN
+   --> select system$get_aws_sns_iam_policy('arn:aws:sns:ap-northeast-1:713405064877:snowpipesns');
+6. In snowflake it will give one statement copy full statement somewhere 
+7. Open aws and click edit on your topic, open access_policy_optional
+   and copy full json code in notepad
+8. At last before last 3rd bracket give comma(,)  and paste your full snowflake arn statement and save
+   it will generate 1 subscription and you will se it s status confirmed
+9. Now you are good to go for pipe
+10. give aws_sns_topic='' property while creating a pipe after auto_ingest = True;
+
+
+
+--------------------------------------- SNOWPIPE ---------------------------------------------
+
+------------------------------------ loading data from aws s3 using SNOWPIPE -----------------------------------
+
+-- Create storage integration object
+create or replace storage integration sky_aws_int
+  TYPE = EXTERNAL_STAGE
+  STORAGE_PROVIDER = S3
+  ENABLED = TRUE 
+  STORAGE_AWS_ROLE_ARN = 'arn:aws:iam::713405064877:role/sky_aws_admin'
+  STORAGE_ALLOWED_LOCATIONS = ('s3://skybucket01/pipes/', 's3://skybucket01/csv/', 's3://skybucket01/others/')
+  COMMENT = 'Integration with aws s3 buckets' ;
+
+-- create a table 
+create or replace table customer_sky (
+	customer_pk number(38,0),
+	salutation varchar(10),
+	first_name varchar(20),
+	last_name varchar(30),
+	gender varchar(1),
+	marital_status varchar(1),
+	day_of_birth date,
+	birth_country varchar(60),
+	email_address varchar(50),
+	city_name varchar(60),
+	zip_code varchar(10),
+	country_name varchar(20),
+	gmt_timezone_offset number(10,2),
+	preferred_cust_flag boolean,
+	registration_time timestamp_ltz(9)
+);
+
+select * from customer_csv;
+
+-- ff
+CREATE OR REPLACE file format sky.aws.aws_ff
+    type = csv
+    field_delimiter = ','
+    skip_header = 1
+    field_optionally_enclosed_by = '\042'
+    empty_field_as_null = TRUE;
+
+-- create a stage
+create or replace stage sky.aws.pipe_stage
+url = 's3://skybucket01/csv/'
+storage_integration = sky_aws_int
+file_format = aws_ff;
+
+-- list a stage
+list @pipe_stage;
+
+-- create a pipe
+create or replace pipe sky.aws.aws_pipe
+auto_ingest = True
+as
+copy into sky.aws.customer_csv
+from @sky.aws.pipe_stage;
+
+-- desc pipe
+desc pipe sky.aws.aws_pipe;   -- arn:aws:sqs:ap-northeast-1:226317514381:sf-snowpipe-AIDATJMMTG2GZ4WNKCHZ2-nwHYVIDR8p0XfoT9n0k35w
+
+-- Two methods for setting uo notificiations to the snowpipe : 
+1. SQS QUEUE -- > copy arn of snowflake and paste in event notification
+2. SNS TOPIC --> create a sns topic and create event notification
+
+
+1. SQS QUEUE; -- copy arn of snowflake and paste in event notification
+
+
+-- listi the records the table
+select * from customer_csv;
+
+-- check the pipe status
+select system$pipe_status('aws_pipe');
+
+
+---------------------- CONFIGURING SNS TOPIC WITH SNOWFLAKE ----------------------------------------------------------
+
+2. SNS TOPIC; --> create a sns topic and create event notification
+
+select system$get_aws_sns_iam_policy('arn:aws:sns:ap-northeast-1:713405064877:sky_coding');
+
+-- create a stage
+create or replace stage sky.aws.pipe_stage
+url = 's3://skybucket01/csv/'
+storage_integration = sky_aws_int
+file_format = aws_ff;
+
+-- list a stage
+list @pipe_stage;
+
+
+
+-- create a pipe
+create or replace pipe sky.aws.aws_pipe_sns
+AUTO_INGEST = True
+aws_sns_topic='arn:aws:sns:ap-northeast-1:713405064877:sky_coding'
+as
+copy into sky.aws.customer_csv
+from @sky.aws.pipe_stage;
+
+-- desc pipe
+desc pipe sky.aws.aws_pipe_sns;
+
+--listing records
+select * from customer_csv;
+
+
+
+

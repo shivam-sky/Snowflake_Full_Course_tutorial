@@ -1,0 +1,369 @@
+
+1. Object_Construct
+2. array_agg
+3. parse_json
+4. Directly insert json data into table
+5. Type_of fun
+6. Deailing with Date and Timestamp
+7. Flattening JSON data into separate tables;
+
+-------------------------------------------------object_construct - Json type data -----------------------------------------------
+
+-- creating json type data with column name and values -- using object_construct fun
+Select object_construct ('firstname', 'joe' , 'lastname' ,'jackson' ,'gender', 'male' , 'age', 28 , 'number', '8787878787' , 'address', null);
+
+-- creating json type data - we get column name - col 1, col 2
+Select object_construct (*) from values ('firstname', 'joe' , 'lastname' ,'jackson' ,'gender', 'male' , 'age', 28 , 'number', '8787878787' , 'address', null);
+
+-- Parsing JSON Data (create tabular type data by giving column name) (simple 2 columns and no nesting)
+Select 'People' as Groupid, 'Pranav' as FirstName, 'Malviya' as LastName UNION  Select 'People' as Groupid, 'Shivam' as FirstName, 'Kumar' as LastName;
+
+-- checking all records in column format of JSON
+select * from (Select 'People' as Groupid, 'Pranav' as FirstName, 'Malviya' as LastName UNION  Select 'People' as Groupid, 'Shivam' as FirstName, 'Kumar' as LastName
+);
+
+------------------------------------------------ array_agg ------------------------------------------------------
+
+--doing with array_agg to create json data on simple 2 columns with no nesting 
+select groupid, array_agg(object_construct('firstname',firstname ,'lastname',lastname))  from (Select 'People' as Groupid, 'Pranav' as FirstName, 'Malviya' as LastName UNION  
+      Select 'People' as Groupid, 'Shivam' as FirstName, 'Kumar' as LastName )group by groupid;
+  
+-- Some more practice on Object_construct and arra_agg
+-- CREATING JSON DATA LIKE PEOPLE.json file WITH NESTING VALUES---------- PEOPLE.JSON file 
+
+--doing with array_agg to get json type data of ADDRESS of people.json file 
+select addressid, array_agg(object_construct('city',city ,'state',state ,'cities',cities,'states',states))  
+           from (Select 'address' as addressid, 'Mumbai' as city, 'Maharashtra' as state, 'Lucknow' as cities, 'UP' as states
+                                  UNION  
+            Select 'address' as addressid, 'Pune' as city, 'Maharashtra' as state, 'Gaziabad' as cities, 'UP' as states
+                                  UNION ALL
+            Select 'address' as addressid, 'Nasik' as city, 'Maharashtra' as state, 'Noida' as cities, 'UP' as states) group by addressid;
+
+
+-- Parsing json data into tabular format for ADDRESS
+select * from  (select 'address' as addressid ,'Mumbai' as city ,'Maharashtra' as state,'Lucknow' as city,'UP' as state 
+                                UNION ALL
+select 'address' as addressid ,'Pune' as city ,'Maharashtra' as state ,'Gaziabad' as city,'UP' as state
+                                UNION ALL
+select 'address' as addressid ,'Nasik' as city ,'Maharashtra' as state ,'Noida' as city,'UP' as state );
+
+
+--doing with array_agg to get nested json type data of PEOPLE.json file 
+select groupid, array_agg(object_construct('firstname',firstname ,'lastname',lastname , 'gender',gender, 'age',age , 'number',number))  
+           from (Select 'People' as Groupid, 'Rahul' as FirstName, 'Yadav' as LastName, 'male' as gender, '18' as age, '8374745657' as number
+                                  UNION  
+               Select 'People' as Groupid, 'Sameer' as FirstName, 'Yadav' as LastName, 'male' as gender, '20' as age, '8347745657' as number
+                                  UNION ALL
+               Select 'People' as Groupid, 'Natasha' as FirstName, 'Yadav' as LastName, 'female' as gender, '24' as age, '7634745657' as number ) group by groupid ;
+ 
+
+----------------------------------------JSON PROCESSING [ PARSE_JSON ]-----------------------------------------------------
+
+-- create json table with variant column
+create or replace transient table json_tbl(
+    json_col variant
+);
+
+-- lets insert a record with varchar into variant 
+insert into json_tbl(json_col) values ('{"firstName":"John", "empid":1001}');     -- error expecting variant got varchar
+
+-- it is not possible to insert a row into variant using direct insert statement
+insert into json_tbl(json_col) 
+select '{"firstName":"John", "empid":1001}';
+
+-- the above also does not work.. so we have to use 
+-- a function called parse_json
+
+insert into json_tbl(json_col) 
+select parse_json('{"firstName":"John", "empid":1001}');  ---- since it is a single value.. I don't need to specify 
+select * from json_tbl;
+delete from json_tbl;
+
+--inserting multiple values in column
+insert into json_tbl (json_col)
+select parse_json(Column1) from values 
+('{"firstName":"Name-1", "empid":1001}'),
+('{"firstName":"Name-2", "empid":1002}'),
+('{"firstName":"Name-3", "empid":1003}'),
+('{"firstName":"Name-4", "empid":1004}'),
+('{"firstName":"Name-5", "empid":1005}');
+
+-- we observed, the order of field changed..
+-- so it is not easy to insert the json data via insert statement.
+select * from json_tbl;
+delete from json_tbl;
+
+--------------------------------------------------------------------------------------------------------------------------
+--------------------------------------CREATING & INSERTING RECORD IN JSON TABLE(employee_tbl)---------------------
+-- directly inserting json data into table 
+
+-- create an employee table with one variant colum
+create or replace transient table employee_tbl(
+    emp_json variant
+);
+
+--  insert one single record
+insert into employee_tbl(emp_json)
+select parse_json(
+  '{
+      "name": "John",
+      "age": 30,
+      "height_in_ft": 5.11,
+      "married": true,
+      "has_kids": false,
+      "stock_options": null
+    }');
+
+-- run the select sql
+select * from employee_tbl;
+
+------------------------------------------Colon Notation To Access JSON Elements-------------------------------
+
+select 
+    emp_json:name,
+    emp_json:"age",
+    emp_json:height_in_ft,
+    emp_json:married,
+    emp_json:has_kids,
+    emp_json:stock_options
+from employee_tbl;
+  
+---------- accessing data with alias notation
+select 
+    emp_json:age::integer as age,
+    emp_json:name::string as "Name",
+    emp_json:height_in_ft::decimal as height,
+    emp_json:married as is_married,
+    emp_json:has_kids as has_kids,
+    emp_json:stock_options as stock_options
+from employee_tbl;
+
+-- adding typeof() funciton to check how snowflake treat these name/value pair
+select 
+    typeof(emp_json:name) as name,
+    typeof(emp_json:age) as age,
+    typeof(emp_json:height_in_ft) as height,
+    typeof(emp_json:married) as is_married,
+    typeof(emp_json:has_kids) as has_kids,
+    typeof(emp_json:stock_options) as stock_options
+from employee_tbl;
+
+
+-- inserting nested json records for accessing it and practice
+insert into employee_tbl(emp_json)
+select parse_json(
+  '{
+    "employee": {
+      "name": "John",
+      "age": 30,
+      "height_in_ft": 5.11,
+      "married": true,
+      "has_kids": false,
+      "stock_options": null,
+      "phone": [
+        "+1 123-456-7890",
+        "+1 098-765-4321"
+      ],
+      "Address": {
+        "street": "3621 McDonald Avenue",
+        "city": "Orlando",
+        "State": "Florida"
+      }
+    }
+  }');
+  
+select * from employee_tbl;
+
+
+-------ACCESSING the records in nested json data with (.) notation for nested one and (:) will also work
+
+select 
+    emp_json:employee.name::string as name,
+    emp_json:employee.age as age,
+    emp_json:employee.height_in_ft as height,
+    emp_json:employee.married as is_married,
+    emp_json:employee.has_kids as has_kids,
+    emp_json:employee.stock_options as stock_options,
+    typeof(emp_json:employee.phone) as all_phone_type,
+    ARRAY_SIZE(emp_json:employee.phone) as how_many_phone,
+    emp_json:employee.phone[0] as work_phone,
+    emp_json:employee.phone[1] as office_phone,
+    typeof(emp_json:employee:Address) as address_type,
+    emp_json:employee:Address:street as street,
+    emp_json:employee.Address.city as city,
+    emp_json:employee.Address.State as state
+from employee_tbl; 
+
+-- apply other function and mathematical operation without casting it.
+select 
+    emp_json:employee.age as age,
+    (emp_json:employee.height_in_ft) * (12*2.54) as height_in_cm,
+    typeof(emp_json:employee.Phone) as all_phone_type,
+    ARRAY_SIZE(emp_json:employee.Phone) as how_many_phone
+from employee_tbl; 
+
+
+---------------------------------Date & Timestamp Data Types in Snowflake JSON---------------------------
+
+insert into employee_tbl(emp_json)
+select parse_json(
+  '{
+      "name": "John",
+      "age": 30,
+      "height_in_ft": 5.11,
+      "dob":"2022-12-11",
+      "dob_timestemp":"2022-12-11T00:19:06.043-08:00",
+      "married": true,
+      "has_kids": false,
+      "stock_options": null
+    }');
+
+select 
+        emp_json:dob::date,
+        emp_json:dob_timestemp::timestamp
+        from employee_tbl order by 1 desc; 
+
+--------------------------------------------Flatting JSON Data & Loading Into Snowflake Tables----------------------------------
+
+-- create the table
+
+create or replace transient table employee_tbl(
+    emp_json variant
+);
+
+--1st record
+insert into employee_tbl(emp_json)
+select parse_json(
+  '{
+    "employee": {"name": "John-1","age": 30,"height_in_ft": 5.11,"married": true,"has_kids": false,
+      "stock_options": null,"email":"john1@ttips.com","phone": ["+1 123-456-7890","+1 098-765-4321"],
+      "Address": {"street": "3621 McDonald Avenue","city": "Orlando","State": "Florida"}
+               }
+    }');
+    
+--2nd record
+insert into employee_tbl(emp_json)
+select parse_json(
+  '{
+    "employee": {"name": "John-2","age": 33,"height_in_ft": 5.09,"married": false,"has_kids": false,
+      "stock_options": 10,"email":"john2@ttips.com","phone": ["+1 222-456-0987"],
+      "Address": {"street": "532 Locust View Drive","city": "San Jose","State": "California"}
+               }
+    }');
+
+select * from employee_tbl;
+--CREATING SEQUENCE OBJECTS FOR attaching t3 table (emp , phone , address) for primary & foreign key
+
+-- create sequence
+create or replace sequence emp_seq
+  start 1 
+  increment 1
+  comment = 'employee sequence';
+  
+create or replace sequence phone_seq
+  start 1 
+  increment 1
+  comment = 'phone sequence';
+  
+create or replace sequence address_seq
+  start 1 
+  increment 1
+  comment = 'address sequence';
+
+----------------------CREATING MASTER TABLES TO LOAD JSON DATA------ in Column format
+
+-- employee master table
+create or replace table employee_master(
+    emp_pk integer default emp_seq.nextval,
+    name string,
+    age number(3),
+    height_in_cm decimal(6,3),
+    is_married boolean,
+    has_kids boolean,
+    stock_options integer,
+    email varchar(100)
+);
+
+-- child table holding all the phones
+create or replace table emp_phones(
+    phone_pk integer default phone_seq.nextval,
+    emp_fk number,
+    phone_type varchar(20),
+    phone_number varchar(30)
+);
+
+-- child table holding all the address
+create or replace table emp_address(
+    address_pk integer default address_seq.nextval,
+    emp_fk number,
+    street_address varchar(200),
+    city varchar(50),
+    state varchar(50)
+);
+
+------------------INSERTING DATA FROM JSONTABLE(employee_tbl) TO MASTER TABLE
+
+--------Inserting into emp_master table from json table(employee_tbl)
+insert into employee_master (name, age, height_in_cm,is_married,has_kids,stock_options,email)  
+select 
+    emp_json:employee.name::string as name,
+    emp_json:employee.age as age,
+    (emp_json:employee.height_in_ft)*(12*2.54) as height_in_cm,
+    emp_json:employee.married as is_married,
+    emp_json:employee.has_kids as has_kids,
+    emp_json:employee.stock_options as stock_options,
+    emp_json:employee.email::string as email
+from employee_tbl; 
+
+-- verifying if data loaded or not   
+select * from employee_master;
+
+--------Inserting into emp_phone table using sequences from json table(employee_tbl)
+
+insert into emp_phones (emp_fk,phone_type,phone_number)
+select 
+    b.emp_pk,
+    'home_phone' as home_phone,
+    a.emp_json:employee.phone[0]::string as home_phone
+from 
+    employee_tbl a 
+    join 
+    employee_master b 
+    on  
+        a.emp_json:employee.email = b.email
+union all
+select 
+    b.emp_pk,
+    'work_phone' as work_phone,
+    a.emp_json:employee.phone[1]::string as work_phone
+from 
+    employee_tbl a 
+    join 
+    employee_master b 
+    on  
+        a.emp_json:employee.email = b.email;
+
+-- verifying if data loaded or not   
+select * from emp_phones;
+
+--------Inserting into emp_address using sequences from json table(employee_tbl)
+
+insert into emp_address (emp_fk,street_address,city,state)
+select 
+    b.emp_pk,
+    a.emp_json:employee.Address.street::string as street,
+    a.emp_json:employee.Address.city::string as city,
+    a.emp_json:employee.Address.State::string as state
+from 
+    employee_tbl a 
+    join 
+    employee_master b 
+    on  
+        a.emp_json:employee.email = b.email;
+        
+-- verifying if data loaded or not        
+select * from emp_address;
+
+select e.*, a.* 
+    from employee_master e join emp_address a on e.emp_pk = a.emp_fk;
+    
