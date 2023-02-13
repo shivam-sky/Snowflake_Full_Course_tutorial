@@ -1,0 +1,101 @@
+CUSTOMER_PK,SALUTATION,FIRST_NAME,LAST_NAME,GENDER,MARITAL_STATUS,DAY_OF_BIRTH,BIRTH_COUNTRY,EMAIL_ADDRESS,CITY_NAME,ZIP_CODE,COUNTRY_NAME,GMT_TIMEZONE_OFFSET,PREFERRED_CUST_FLAG,REGISTRATION_TIME
+25335656,Dr.,Leo,Brown,F,D,1930-06-16,Madagascar,leo.brown@7uemf93n6mhfdf8.edu,Brownsville,59310,United States,-6.00,TRUE,2022-10-03 22:43:20.810 -0700
+25335678,Mrs.,Melissa,Hendrickson,M,S,1928-03-15,Romania,melissa.hendrickson@7d4vctbyz9tcmcds.org,Whitehall,77595,United States,-6.00,TRUE,2022-10-03 22:43:20.810 -0700
+25335682,Mrs.,Louise,Cobb,F,S,1951-09-09,Mali,louise.cobb@suqxozlxknl.com,Florence,33394,United States,-6.00,TRUE,2022-10-03 22:43:20.810 -0700
+25335724,Sir,Eugene,Jimenez,M,S,1929-05-28,French Polynesia,eugene.jimenez@a2kmgxvma.edu,Belmont,70191,United States,-6.00,TRUE,2022-10-03 22:43:20.810 -0700
+25335730,Dr.,Joyce,Ferguson,F,M,1973-09-15,Cambodia,joyce.ferguson@9o.com,Macedonia,61087,United States,-6.00,FALSE,2022-10-03 22:43:20.810 -0700
+25335750,Dr.,Jack,Mcclellan,F,S,1938-10-01,Solomon Islands,jack.mcclellan@khbdi8fv1d.org,Green Acres,77683,United States,-6.00,TRUE,2022-10-03 22:43:20.810 -0700
+25335753,Ms.,Amanda,Howell,F,U,1932-08-03,Togo,amanda.howell@mg8kq.com,Franklin,39101,United States,-6.00,TRUE,2022-10-03 22:43:20.810 -0700
+25335764,Mr.,Christopher,Coffey,F,D,1986-07-23,Sweden,christopher.coffey@yhrz6mqmpct1hvz8.edu,Forest Hills,69237,United States,-6.00,TRUE,2022-10-03 22:43:20.810 -0700
+25335773,Sir,Joesph,Bachman,F,M,1970-08-13,American Samoa,joesph.bachman@9cdgttsvtyi.org,Quincy,33868,United States,-5.00,FALSE,2022-10-03 22:43:20.810 -0700
+25335797,Mr.,Gilbert,Hawkins,M,D,1938-05-03,Namibia,gilbert.hawkins@lxfggyid96jez.org,Stringtown,40162,United States,-5.00,TRUE,2022-10-03 22:43:20.810 -0700
+25335810,Sir,Cory,Thompson,M,D,1992-09-09,Gibraltar,cory.thompson@uymkcy131xkbi.org,Forest Hills,59237,United States,-6.00,FALSE,2022-10-03 22:43:20.810 -0700
+25335835,Mr.,Phillip,Brewer,M,M,1972-02-03,Jordan,phillip.brewer@ukgbmtx9tqs.edu,Oakdale,99584,United States,-8.00,FALSE,2022-10-03 22:43:20.810 -0700
+25335892,Mr.,Robert,Sprague,M,S,1981-04-22,Panama,robert.sprague@sasuaqmanu.com,Aberdeen,67995,United States,-6.00,FALSE,2022-10-03 22:43:20.810 -0700
+25335899,Sir,John,Wright,M,S,1971-08-10,Slovakia,john.wright@q3gzytav.org,Riverside,,,-6.00,TRUE,2022-10-03 22:43:20.810 -0700
+25335900,Miss,Jacalyn,Mccartney,M,M,1954-01-17,Comoros,jacalyn.mccartney@c0laaioaq.org,Unionville,71711,United States,-6.00,TRUE,2022-10-03 22:43:20.810 -0700
+25335923,Mr.,Richard,Fox,F,W,1962-04-12,San Marino,richard.fox@rjx45ujx.edu,Oak Ridge,28371,United States,-5.00,TRUE,2022-10-03 22:43:20.810 -0700
+25335926,Miss,Claudia,Freeman,F,S,1952-06-25,Brazil,claudia.freeman@y3fadijxnuajc.com,Rosewood,52205,United States,-6.00,FALSE,2022-10-03 22:43:20.810 -0700
+25335938,Mr.,Herman,Scott,M,M,1932-04-17,Iraq,herman.scott@uvecz4mv98.org,Midway,02504,United States,-5.00,FALSE,2022-10-03 22:43:20.810 -0700
+25335956,Miss,Anna,Earley,M,D,1952-08-31,Guinea,anna.earley@rujxvpmasbiesmyrl.com,Bethel,,,-5.00,TRUE,2022-10-03 22:43:20.810 -0700
+25335957,Ms.,Nina,Delarosa,M,D,1945-08-13,Bhutan,nina.delarosa@la7xopy9l6k2zlnyt.org,Wildwood,36871,United States,-5.00,TRUE,2022-10-03 22:43:20.810 -0700
+25336013,Miss,Gertrude,Snow,F,W,1958-02-03,Djibouti,gertrude.snow@so34iu1eopyxxyl.com,Riverside,69231,United States,-6.00,TRUE,2022-10-03 22:43:20.810 -0700
+25336021,Mrs.,Deborah,Hodges,F,W,1987-10-01,Chile,deborah.hodges@tj.com,Stringtown,10162,United States,-5.00,FALSE,2022-10-03 22:43:20.810 -0700
+25336031,Mr.,Travis,Stephens,M,U,1938-03-17,Montserrat,travis.stephens@askmvth4y4t.edu,Riverside,69231,United States,-6.00,TRUE,2022-10-03 22:43:20.810 -0700
+25336041,Mr.,Michael,Burch,F,U,1959-06-20,Chile,michael.burch@semexb7zgjp8c9.com,Lakeside,49532,United States,-5.00,FALSE,2022-10-03 22:43:20.810 -0700
+25336050,Dr.,Lance,Nixon,M,S,1962-04-05,Armenia,lance.nixon@dbc.com,Deerfield,49840,United States,,TRUE,2022-10-03 22:43:20.810 -0700
+25336064,Dr.,Vincenzo,Kelley,F,U,1958-11-23,Western Sahara,vincenzo.kelley@cxi.org,Freeport,81844,United States,-7.00,TRUE,2022-10-03 22:43:20.810 -0700
+25336069,Mr.,Steve,Bunch,F,D,1963-09-05,Russian Federation,steve.bunch@y.org,Newport,71521,United States,-6.00,TRUE,2022-10-03 22:43:20.810 -0700
+25336083,Sir,Brian,Lloyd,M,S,1941-03-15,Niue,brian.lloyd@9uq4tnj4ubkhxqt.org,White Oak,56668,United States,-7.00,TRUE,2022-10-03 22:43:20.810 -0700
+25336094,Sir,Milton,Amos,F,M,1962-05-25,Faroe Islands,milton.amos@xzrsyi7atgenmk.com,Kingston,54975,United States,-6.00,FALSE,2022-10-03 22:43:20.810 -0700
+25336109,Sir,Leonard,Williams,M,W,1955-12-15,Chile,leonard.williams@c5thn5ybbce4xz.com,Pine Grove,84593,United States,-7.00,FALSE,2022-10-03 22:43:20.810 -0700
+25336111,Mrs.,Dena,Anderson,M,S,1965-09-02,Djibouti,dena.anderson@kavbfvul0bv.org,Mount Vernon,98482,United States,-9.00,TRUE,2022-10-03 22:43:20.810 -0700
+25336121,Dr.,Doris,Moore,M,D,1960-11-11,Burkina Faso,doris.moore@ozqsgbvim0c.com,Midway,21904,United States,-5.00,TRUE,2022-10-03 22:43:20.810 -0700
+25336133,Dr.,Cecilia,,M,U,,Mauritania,cecilia.miller@7sfhylzbpczepig4.org,Five Forks,42293,United States,-5.00,,2022-10-03 22:43:20.810 -0700
+25336136,Miss,Virginia,White,F,S,1976-04-10,Argentina,virginia.white@oplrxgcfntr.org,Centerville,50059,United States,-6.00,TRUE,2022-10-03 22:43:20.810 -0700
+25336137,Ms.,Ruby,Rider,M,W,1945-12-31,Peru,ruby.rider@hiivm.org,Franklin,59101,United States,-6.00,FALSE,2022-10-03 22:43:20.810 -0700
+25336158,Sir,Jimmy,Elkins,M,M,1930-10-04,Dominica,jimmy.elkins@tg4bxxlv2ja8.org,Liberty,53451,United States,-6.00,TRUE,2022-10-03 22:43:20.810 -0700
+25336193,Dr.,Vincent,West,M,M,1932-10-30,Turkey,vincent.west@la0iddzky8mo8.org,Woodbury,54489,United States,-6.00,FALSE,2022-10-03 22:43:20.810 -0700
+25336201,Mr.,Leonard,Young,M,U,1938-12-13,Trinidad And Tobago,leonard.young@pd8poyuvhuiark.edu,Mount Olive,48059,United States,-5.00,FALSE,2022-10-03 22:43:20.810 -0700
+25336203,Dr.,Ruby,Harper,F,U,1977-04-08,Guatemala,ruby.harper@imtn.org,Crossroads,60534,United States,-6.00,FALSE,2022-10-03 22:43:20.810 -0700
+25336218,Miss,Bernadette,Bell,F,D,1988-03-22,Nauru,bernadette.bell@s8sk.com,Fairfield,36192,United States,-6.00,TRUE,2022-10-03 22:43:20.810 -0700
+25336229,Sir,Paul,Harper,F,D,1931-05-16,Bahrain,paul.harper@x08a.org,Cedar,51229,United States,-6.00,FALSE,2022-10-03 22:43:20.810 -0700
+25336230,Dr.,Gerald,Donnelly,F,U,1932-01-23,Niger,gerald.donnelly@cyi.edu,Sunnyside,61952,United States,-7.00,TRUE,2022-10-03 22:43:20.810 -0700
+25336259,Miss,Emily,Williams,F,M,1930-10-23,Latvia,emily.williams@vcu4nsg9i.org,Kirkland,67896,United States,-6.00,TRUE,2022-10-03 22:43:20.810 -0700
+25336262,Dr.,Emily,Diaz,F,W,1940-11-07,Paraguay,emily.diaz@ds2bsd1.edu,Salem,28048,United States,-5.00,TRUE,2022-10-03 22:43:20.810 -0700
+25336277,Miss,Margaret,Seifert,M,W,1931-03-20,Somalia,margaret.seifert@5ayc0j9.org,Guthrie,41423,United States,-5.00,FALSE,2022-10-03 22:43:20.810 -0700
+25336281,Dr.,Andrea,Hamer,M,W,,,andrea.hamer@qs.edu,Riverdale,59391,United States,-6.00,FALSE,2022-10-03 22:43:20.810 -0700
+25336329,Dr.,Henry,Giordano,M,D,1943-03-07,Grenada,henry.giordano@60qpfphmrbzf3.com,Highland,79454,United States,-6.00,TRUE,2022-10-03 22:43:20.810 -0700
+25336332,Mr.,Carl,Soto,F,S,1951-05-02,Kyrgyzstan,carl.soto@buqvtiqrkrk.edu,Spring Valley,46060,United States,-6.00,FALSE,2022-10-03 22:43:20.810 -0700
+25336339,Ms.,Elizabeth,Byrd,M,D,1960-11-11,Mongolia,elizabeth.byrd@0gdqrnkhtzzj.org,Woodville,64289,United States,-6.00,TRUE,2022-10-03 22:43:20.810 -0700
+25336437,Dr.,Elvin,Morris,M,D,1927-03-12,American Samoa,elvin.morris@4.org,Crossroads,60534,United States,-6.00,TRUE,2022-10-03 22:43:20.810 -0700
+25336454,Ms.,Ashley,Vasquez,F,S,1977-10-01,Antigua And Barbuda,ashley.vasquez@2y43.edu,Mount Olive,28059,United States,-5.00,FALSE,2022-10-03 22:43:20.810 -0700
+25336463,Mrs.,Christine,Martinez,M,S,1929-04-27,Namibia,christine.martinez@4r.org,Mount Olive,38059,United States,-5.00,TRUE,2022-10-03 22:43:20.810 -0700
+25336484,Dr.,Christina,Willingham,M,D,1939-09-03,Christmas Island,christina.willingham@ledtmaxrt.org,Liberty,83451,United States,-7.00,TRUE,2022-10-03 22:43:20.810 -0700
+25336529,Ms.,Lanette,Hardison,F,U,1950-12-23,Comoros,lanette.hardison@1j3gbjv7iyky8.edu,Concord,64107,United States,-6.00,FALSE,2022-10-03 22:43:20.810 -0700
+25336538,Dr.,James,Martin,M,M,1949-12-30,Pakistan,james.martin@x2re1rs54r.edu,Mount Zion,18054,United States,-5.00,FALSE,2022-10-03 22:43:20.810 -0700
+25336594,Dr.,Michael,Steiner,M,D,1956-02-02,Cape Verde,michael.steiner@j4ftzrcozhdiod6m.edu,Glendale,43951,United States,-5.00,FALSE,2022-10-03 22:43:20.810 -0700
+25336605,Sir,Rene,Aguilar,M,D,1971-04-22,Paraguay,rene.aguilar@pyzebk1e.org,Green Acres,67683,United States,-6.00,FALSE,2022-10-03 22:43:20.810 -0700
+25336617,Sir,Robert,White,F,D,1989-10-06,Solomon Islands,robert.white@vbgxmkdhr4vxh.org,Taft,80589,United States,-7.00,FALSE,2022-10-03 22:43:20.810 -0700
+25336632,Mr.,Kevin,Hayes,M,W,1964-03-24,Hong Kong,kevin.hayes@rgvjoplogmlkg7zn.edu,Greenville,51387,United States,-6.00,TRUE,2022-10-03 22:43:20.810 -0700
+25336659,Mr.,Jason,Hudson,M,M,1980-03-04,Canada,jason.hudson@myl.com,Harmony,75804,United States,-6.00,TRUE,2022-10-03 22:43:20.810 -0700
+25336673,Dr.,Nickolas,Herndon,M,S,1981-07-26,Italy,nickolas.herndon@njc.edu,Highland Park,26534,United States,-5.00,FALSE,2022-10-03 22:43:20.810 -0700
+25336679,Miss,Elizabeth,French,M,D,1976-03-01,Macao,elizabeth.french@d.edu,Lakeview,78579,United States,-6.00,FALSE,2022-10-03 22:43:20.810 -0700
+25336698,Dr.,Mario,Piazza,M,D,1982-09-22,Angola,mario.piazza@pmzoftcbjj16et6ui.org,Crossroads,20534,United States,-5.00,TRUE,2022-10-03 22:43:20.810 -0700
+25336703,Dr.,Robert,Taylor,F,W,1968-02-18,Western Sahara,robert.taylor@v.edu,Berea,93804,United States,-8.00,TRUE,2022-10-03 22:43:20.810 -0700
+25336709,Miss,Josephine,Schwartz,F,U,1948-10-11,Kazakhstan,josephine.schwartz@8fsemvhzq.edu,Mount Zion,88054,United States,-7.00,TRUE,2022-10-03 22:43:20.810 -0700
+25336714,Mr.,Bobby,Daugherty,F,W,1991-12-17,Hungary,bobby.daugherty@uxgvj.com,Unionville,61711,United States,-6.00,FALSE,2022-10-03 22:43:20.810 -0700
+25336717,Sir,Gregory,Weston,F,M,1977-08-21,Madagascar,gregory.weston@mhmjbsbkrq.edu,Woodland,44854,United States,-5.00,FALSE,2022-10-03 22:43:20.810 -0700
+25336721,Mr.,Santos,Peterson,M,M,1927-04-28,Cayman Islands,santos.peterson@ngpaqfekkixfgmee.com,Woodlawn,44098,United States,-5.00,TRUE,2022-10-03 22:43:20.810 -0700
+25336759,Miss,Josephine,Burchfield,M,S,1973-04-21,Panama,josephine.burchfield@fcj3qefujrkch.com,Greenwood,28828,United States,-5.00,FALSE,2022-10-03 22:43:20.810 -0700
+25336768,Mrs.,Ignacia,Purnell,F,M,1968-02-28,Finland,ignacia.purnell@smdrub25f5.edu,Union Hill,67746,United States,-6.00,FALSE,2022-10-03 22:43:20.810 -0700
+25336810,Sir,Frank,Lewis,F,S,1981-06-20,Guernsey,frank.lewis@nu47ee7.com,Riverdale,69391,United States,-6.00,FALSE,2022-10-03 22:43:20.810 -0700
+25336811,Dr.,Amanda,Gilmore,M,U,1945-04-30,Japan,amanda.gilmore@m4saiigrohug.com,Highland Park,56534,United States,-6.00,TRUE,2022-10-03 22:43:20.810 -0700
+25336825,Miss,Jacqueline,Chase,M,D,1955-01-14,Guinea-Bissau,jacqueline.chase@vfeo.edu,Hillcrest,53003,United States,-6.00,TRUE,2022-10-03 22:43:20.810 -0700
+25336828,Sir,George,Larkin,M,S,1963-02-01,China,george.larkin@9yjqmkjnlmna.org,Pine Grove,24593,United States,-5.00,TRUE,2022-10-03 22:43:20.810 -0700
+25336829,Miss,Elizabeth,Andrade,F,S,1931-06-22,Montenegro,elizabeth.andrade@lh3edb.edu,Nichols,67940,United States,-6.00,TRUE,2022-10-03 22:43:20.810 -0700
+25336859,Sir,Jorge,Paterson,M,D,1981-10-07,Bangladesh,jorge.paterson@xy1ozren3zift0.com,Macedonia,31087,United States,-5.00,TRUE,2022-10-03 22:43:20.810 -0700
+25336865,Mr.,Corey,Laws,F,W,1925-11-21,Indonesia,corey.laws@n2msmsdkkrix64.edu,Edwards,81409,United States,-7.00,FALSE,2022-10-03 22:43:20.810 -0700
+25336876,Mr.,James,Stewart,M,D,1940-01-21,Ecuador,james.stewart@suejy9qfs.com,Fairfield,66192,United States,-6.00,TRUE,2022-10-03 22:43:20.810 -0700
+25336908,Sir,Byron,Wheeler,M,D,1979-08-28,Kyrgyzstan,byron.wheeler@q1gro2j.edu,Bethel,55281,United States,-6.00,FALSE,2022-10-03 22:43:20.810 -0700
+25336917,Dr.,Joseph,Christie,F,S,1982-01-31,Turkey,joseph.christie@s3z.org,Mount Zion,48054,United States,-5.00,FALSE,2022-10-03 22:43:20.810 -0700
+25336962,Mr.,Manuel,Cope,F,M,1943-11-15,Israel,manuel.cope@frirxcpbslm.org,Spring Hill,26787,United States,-5.00,TRUE,2022-10-03 22:43:20.810 -0700
+25336998,Ms.,Myrtle,Behrens,F,M,1942-12-19,Nicaragua,myrtle.behrens@6umvduybjo.edu,Oak Grove,48370,United States,-6.00,TRUE,2022-10-03 22:43:20.810 -0700
+25337008,Sir,Charles,Jones,M,M,1978-07-13,Poland,charles.jones@bisdo.com,Sulphur Springs,68354,United States,-6.00,FALSE,2022-10-03 22:43:20.810 -0700
+25337011,Mrs.,Rosalind,Miller,M,M,1970-06-15,United States,rosalind.miller@ckfb8p5nb9iru.org,Woodlawn,44098,United States,-6.00,FALSE,2022-10-03 22:43:20.810 -0700
+25337068,Ms.,Carolyn,Craven,F,M,1953-10-25,Burundi,carolyn.craven@eaknxt4oqns7qg.com,Union,58721,United States,-6.00,TRUE,2022-10-03 22:43:20.810 -0700
+25337103,Mrs.,Sherry,Holman,M,U,1966-01-12,Oman,sherry.holman@xbzaem.com,Wilson,26971,United States,-5.00,TRUE,2022-10-03 22:43:20.810 -0700
+25337111,Dr.,Edward,Shipley,M,D,1980-07-21,Tunisia,edward.shipley@yd3bynujibqhq4.org,Oakwood,80169,United States,-7.00,FALSE,2022-10-03 22:43:20.810 -0700
+25337117,Mr.,Ramon,Boone,F,D,1991-08-06,Cape Verde,ramon.boone@r4tdtojzv.com,Sunnyside,02552,United States,-5.00,TRUE,2022-10-03 22:43:20.810 -0700
+25337120,Dr.,Robert,Johnson,F,U,1943-12-13,Ghana,robert.johnson@to2mxhlp5zaal7yi.org,Jackson,49583,United States,-6.00,TRUE,2022-10-03 22:43:20.810 -0700
+25337153,Ms.,Louise,Hall,M,D,1989-04-03,Mozambique,louise.hall@kqjkqp39mf.com,Springdale,78883,United States,-6.00,FALSE,2022-10-03 22:43:20.810 -0700
+25337239,Miss,Lucy,Smith,M,S,1963-04-24,Tokelau,lucy.smith@yc0qggson.edu,Hamilton,52808,United States,-6.00,TRUE,2022-10-03 22:43:20.810 -0700
+25337270,Sir,Theodore,Palmer,M,S,1964-12-14,Denmark,theodore.palmer@fhdo6bhtvja.org,Fairfield,76192,United States,-6.00,FALSE,2022-10-03 22:43:20.810 -0700
+25337298,Sir,Joseph,Sweeney,F,D,1985-12-09,Turkmenistan,joseph.sweeney@z0a1sfq7eb5y.org,Pleasant Hill,83604,United States,-7.00,FALSE,2022-10-03 22:43:20.810 -0700
+25337303,Mr.,Eric,Bradley,M,S,1986-05-05,Qatar,eric.bradley@uybonvmn.com,Mount Pleasant,11933,United States,-5.00,FALSE,2022-10-03 22:43:20.810 -0700
+25337308,Dr.,Allen,White,M,D,1980-04-19,Kiribati,allen.white@e4ubll9yshvis.org,Forest Hills,29237,United States,-5.00,FALSE,2022-10-03 22:43:20.810 -0700
+25337316,Ms.,Janice,Tucker,F,U,1963-08-09,Martinique,janice.tucker@h6jzprvuv9v.edu,Argyle,58722,United States,-6.00,FALSE,2022-10-03 22:43:20.810 -0700
+25337331,Mr.,John,Tilley,M,S,1927-08-24,New Caledonia,john.tilley@q0u3.com,New Hope,29431,United States,-5.00,TRUE,2022-10-03 22:43:20.810 -0700
+25337377,Ms.,Gloria,Alexander,F,W,1973-08-26,French Polynesia,gloria.alexander@auze8pxe99t3.com,Appleton,44240,United States,-5.00,FALSE,2022-10-03 22:43:20.810 -0700
+25337384,Mr.,Gordon,Campbell,F,S,1962-02-03,Iceland,gordon.campbell@mtret8uyc6v.com,Enterprise,81757,United States,-7.00,TRUE,2022-10-03 22:43:20.810 -0700
+25337378,Ms.,Gloria,Alexander,F,W,1973-08-26,French Polynesia,gloria.alexander@auze8pxe99t3.com,Appleton,44240,United States,-5.00,FALSE,2022-10-03 22:43:20.810 -0700

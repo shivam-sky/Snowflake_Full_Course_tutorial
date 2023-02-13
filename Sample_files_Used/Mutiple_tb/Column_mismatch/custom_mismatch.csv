@@ -1,0 +1,6 @@
+RECORD_TYPE, CYCLE_RUN , CUSTOMER_PK ,SALUTATION , FIRST_NAME , LAST_NAME ,GENDER 
+1-good-record,sample-01,2345678,Dr.,Siddharth,Yadav,M
+2-good-record,sample-02,2345678,Mr.,Prasant,Yadav,M
+3-less-columns,sample-01,2345678,Miss.,Neha
+4-more-columns,sample-01,2345678,Mrs.,Vivek,Yadav,M,India, Developer , Dec-18
+,,,,,,
