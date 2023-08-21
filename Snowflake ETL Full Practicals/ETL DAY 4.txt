@@ -1,0 +1,231 @@
+create or replace database sky;
+create or replace schema sky.sky;
+
+
+-- Create storage integration object
+create or replace storage integration sky_aws_int
+  TYPE = EXTERNAL_STAGE
+  STORAGE_PROVIDER = S3
+  ENABLED = TRUE 
+  STORAGE_AWS_ROLE_ARN = 'arn:aws:iam::713405064877:role/sky_aws_admin'
+  STORAGE_ALLOWED_LOCATIONS = ('s3://etl.bucket001')
+  COMMENT = 'Integration with aws s3 buckets' ;
+
+
+desc integration sky_aws_int;  -- arn:aws:iam::459824444168:user/1nia0000-s
+
+  CREATE OR REPLACE file format aws_ff
+    type = csv
+    field_delimiter = ','
+    skip_header = 1
+    field_optionally_enclosed_by = 'none'
+    empty_field_as_null = TRUE
+    error_on_column_count_mismatch = false;
+
+  CREATE OR REPLACE STAGE stage_aws
+    URL = 's3://etl.bucket001'
+    STORAGE_INTEGRATION = sky_aws_int
+    file_format = aws_ff;
+
+  list @stage_aws;
+
+  -- creating table
+create or replace table CUSTOMER ( ACCT_NO INT NOT NULL PRIMARY KEY, EXTRACT_DATE DATE , NAME VARCHAR(100) , ADDRESS VARCHAR, PHONE VARCHAR(44), EMAIL VARCHAR(100) );
+
+  -- creating a target table
+create or replace table TG_CUSTOMER ( ACCT_NO INT NOT NULL PRIMARY KEY, EXTRACT_DATE DATE , NAME VARCHAR(100) , ADDRESS VARCHAR, PHONE VARCHAR(44), EMAIL VARCHAR(100) , START_DATE TIMESTAMP_NTZ, END_DATE TIMESTAMP_NTZ, FLAG STRING);
+
+  -- creating a analytics table
+create or replace table Customer_analytics ( ACCT_NO INT NOT NULL PRIMARY KEY, EXTRACT_DATE DATE , NAME VARCHAR(100) , ADDRESS VARCHAR, PHONE VARCHAR(44), EMAIL VARCHAR(100) );
+
+-- creating stream on customer table to track changes
+create or replace stream customer_str on table customer;
+
+show streams;
+
+-- verifying records captured by stream
+select * from customer_str;
+
+select * from customer;
+
+-- doing some insertion, updation, deletion on customer tble so that stream can track those changes
+
+
+-- creating pipe for data loading
+create or replace pipe etl_pipe
+auto_ingest = True
+as
+copy into customer
+from @stage_aws;
+
+-- check the pipe status
+select system$pipe_status('etl_pipe');
+
+
+desc pipe etl_pipe;  -- arn:aws:sqs:ap-northeast-1:459824444168:sf-snowpipe-AIDAWWD5MGMEIHL2FZRIH-e8u5xD-Ecw7jwoptVqOwaw
+
+1.. for setting up notfification 
+we have 2 options ;
+  -- SNS TOPIC 
+  -- SQS QUEUE
+
+
+--  OR setting up with sns topic
+
+-- upload 1 data file to s3 location
+
+-- VERIFY data in table & stream
+
+
+select * from customer;
+select * from TG_customer;
+truncate table tg_customer;
+select * from customer_str;
+
+
+-- checking the copy history
+Select * from Table (INFORMATION_SCHEMA.COPY_HISTORY
+                     (TABLE_NAME =>'sky.sky.customer',
+                     START_TIME => DATEADD(HOUR, -2, CURRENT_TIMESTAMP()
+                     )) );
+
+-- consuming inserted records captured by stream to the target table with start_date, end_date and flag
+
+Insert into TG_Customer (Acct_no,extract_date,name,address,phone,email,start_date,end_date,flag)
+Select acct_no,extract_date,name,address,phone,email,to_timestamp_ntz(current_timestamp),'9999-12-31 00:00:00','Y' from customer_str where METADATA$ACTION='INSERT' ;
+
+
+----------------------------------------------------------------------------
+
+-- doing some updation
+
+BEGIN ;
+update customer set name='sky' where Acct_no=1001;
+COMMIT;
+
+-- consuming updation
+Merge into TG_CUSTOMER T1
+using (select * from customer_str) T2
+on T1.Acct_no = T2.Acct_no  
+When matched AND (T2.METADATA$ACTION = 'DELETE') THEN
+Update set end_date = to_timestamp_ntz(current_timestamp), flag ='N'
+When not matched and (T2. METADATA$ACTION = 'INSERT'AND T2.METADATA$ISUPDATE= 'TRUE') THEN
+Insert (acct_no,extract_date,name,address,phone,email,start_date,end_date,flag)
+Values (T2.acct_no,t2.extract_date,t2.name,t2.address,t2.phone,t2.email,to_timestamp_ntz(current_timestamp),'9999-12-31 00:00:00','Y');
+
+
+------------------------------------------------------------------------------
+
+select * from customer;
+select * from TG_customer; 
+select * from customer_str;
+select * from customer_analytics;
+
+-- doing some deletion
+
+delete from customer where Acct_no = 1003;
+
+-- consuming deletion done in above 
+
+
+-- verifying data for analysis team to check the data on the basis of flag
+-- we will put up the flag in where clause 
+-- to check data for deleted the flag value will be "N"
+-- to check data for the updated records the flag value will be "Y"
+Insert overwrite into Customer_analytics
+select acct_no, extract_date,name,address,phone,email from TG_CUSTOMER where flag = 'Y';
+
+
+
+==============================================================================================================================================================================================
+
+PERFORMING AUTOMATION of Case study question
+
+/*
+Below are the tasks that we will have as part of the above ETL process:
+
+Truncate Temporary table before every load
+Load data from Source File to Temporary Table
+Overwrite landing data with latest Temp table data
+Landing to Staging, when there are records present in the Stream of Landing, i.e. New or Updated records have been processed
+Staging to Analytics, processing only Active records.
+Remove the file on S3
+*/
+
+
+-- creating task to consume all data from stream to target tables
+create or replace task customer_task
+warehouse = compute_wh
+schedule = '1 minute'
+WHEN
+SYSTEM$STREAM_HAS_DATA('sky.sky.customer_str')
+as
+Merge into TG_CUSTOMER T1
+using (select * from customer_str) T2
+on T1.Acct_no = T2.Acct_no  
+When matched AND (T2.METADATA$ACTION = 'DELETE') THEN
+Update set end_date = to_timestamp_ntz(current_timestamp), flag ='N'
+When not matched and (T2. METADATA$ACTION = 'INSERT') THEN
+Insert (acct_no,extract_date,name,address,phone,email,start_date,end_date,flag)
+Values (T2.acct_no,t2.extract_date,t2.name,t2.address,t2.phone,t2.email,to_timestamp_ntz(current_timestamp),'9999-12-31 00:00:00','Y');
+
+
+-----------------------------------------------------------------------------------------------
+                    -- practce    
+
+
+
+-- consuming updation
+Merge into TG_CUSTOMER T1
+using (select * from customer_str) T2
+on T1.Acct_no = T2.Acct_no  
+When matched AND (T2.METADATA$ACTION = 'DELETE') THEN DELETE
+-- Update set end_date = to_timestamp_ntz(current_timestamp), flag ='N'
+When matched and (T2. METADATA$ACTION = 'INSERT'AND T2.METADATA$ISUPDATE= 'TRUE') THEN
+Update set 
+     T1.Extract_date = T2.Extract_date,
+     T1.name = T2.name,
+     T1.address = t2.address,
+     T1.phone = t2.phone,
+     T1.email = t2.email
+   /*  T1.start_date = to_timestamp_ntz(current_timestamp),
+     T1.end_date = 'Null' , 
+     T1.flag = 'Y' */
+When not matched and (T2.METADATA$ACTION = 'INSERT' and METADATA$ISUPDATE = 'False') Then  
+Insert (acct_no,extract_date,name,address,phone,email,start_date,end_date,flag)
+Values (T2.acct_no,t2.extract_date,t2.name,t2.address,t2.phone,t2.email,to_timestamp_ntz(current_timestamp),'9999-12-31 00:00:00','Y');
+
+
+            
+
+
+/*
+create or replace task customer_task2
+warehouse = compute_wh
+schedule = '1 minute'
+WHEN
+SYSTEM$STREAM_HAS_DATA('sky.sky.customer_str')
+as
+MERGE INTO TG_CUSTOMER t1
+USING customer_str t2
+on t.ACCT_NO = s.ACCT_NO
+when matched
+    and s.metadata$action = 'DELETE'
+    and s.metadata$isupdate = 'FALSE'
+    then delete
+when matched
+    and s.metadata$action = 'INSERT'
+    and s.metadata$isupdate = 'TRUE'
+    then update
+      set t.EXTRACT_DATE = s.EXTRACT_DATE,
+      t.NAME = s.NAME,
+      t.ADDRESS = s.ADDRESS,
+      t.PHONE = s.PHONE,
+      t.EMAIL = s.EMAIL  
+      when matched
+    and s.metadata$action ='insert'
+ and s.metadata$isupdate  = 'false'
+    insert into customer(select ACCT_NO, EXTRACT_DATE, NAME, ADDRESS, PHONE, EMAIL from custom_str);
+;
+
+

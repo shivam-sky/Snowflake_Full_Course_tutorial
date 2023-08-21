@@ -1,0 +1,196 @@
+/*
+       AUTOMATION ETL Processing 
+   
+E -> Extraction  -- Snowpipe -- setup notification channel through sns or sqs queue
+T -> Transformation  -- Manupulate some data ( inserts , updates or deletes )
+L -> Loading  -- use tasks for loading to target tables with merge command (inserts,updates and deletes)
+
+*/
+
+
+
+-- ETL CONTINUOUS DATA LOADING
+
+-- SNOWPIPE FOR DATA LOADING
+-- STREAM FOR CAPTURING THE CHANGES
+-- TASKS FOR CONSUMING DATA FROM STREAM TO TARGET TABLES 
+
+
+
+-- Create storage integration object
+create or replace storage integration sky_aws_int
+  TYPE = EXTERNAL_STAGE
+  STORAGE_PROVIDER = S3
+  ENABLED = TRUE 
+  STORAGE_AWS_ROLE_ARN = 'arn:aws:iam::713405064877:role/sky_aws_admin'
+  STORAGE_ALLOWED_LOCATIONS = ('s3://etl.bucket001')
+  COMMENT = 'Integration with aws s3 buckets' ;
+
+
+  CREATE OR REPLACE file format aws_ff
+    type = csv
+    field_delimiter = ','
+    skip_header = 1
+    field_optionally_enclosed_by = 'none'
+    empty_field_as_null = TRUE
+    error_on_column_count_mismatch = false;
+
+  CREATE OR REPLACE STAGE stage_aws
+    URL = 's3://etl.bucket001'
+    STORAGE_INTEGRATION = sky_aws_int
+    file_format = aws_ff;
+
+  list @stage_aws;
+
+  -- creating table
+create or replace table TG_customer ( ACCT_NO INT NOT NULL PRIMARY KEY, EXTRACT_DATE DATE , NAME VARCHAR(100) , ADDRESS VARCHAR, PHONE VARCHAR(44), EMAIL VARCHAR(100) );
+
+-- creating stream on customer table to track changes
+create or replace stream customer_str on table etl.sky.customer;
+
+show streams;
+
+-- verifying records captured by stream
+select * from customer_str;
+
+select * from customer;
+
+-- doing some insertion, updation, deletion on customer tble so that stream can track those changes
+
+
+-- creating pipe for data loading
+create or replace pipe etl_pipe
+auto_ingest = True
+as
+copy into etl.sky.customer
+from @stage_aws;
+
+-- check the pipe status
+select system$pipe_status('etl_pipe');
+
+
+desc pipe etl_pipe;  -- arn:aws:sqs:ap-northeast-1:034567696723:sf-snowpipe-AIDAQQDDFGFJZCLSRNWWS-BxGSqiTBjVo3pcW4YM1MUw
+
+select * from customer;
+
+select * from customer_str;
+
+
+1.. for setting up notfification 
+we have 2 options 
+  -- SNS TOPIC 
+  -- SQS QUEUE
+
+
+--  OR setting up with sns topic
+
+
+
+
+
+-- upload 1 data file to s3 location
+
+
+-- VERIFY data in table & stream
+
+-- checking the copy history
+Select * from Table (INFORMATION_SCHEMA.COPY_HISTORY
+                     (TABLE_NAME =>'etl.sky.customer',
+                     START_TIME => DATEADD(HOUR, -2, CURRENT_TIMESTAMP()
+                     )) );
+
+
+
+select * from customer;   -- 26 rows  -- 39 rows
+
+select * from customer_str;   -- 0 rows 
+
+select * from tg_customer;   -- 26 rows   -- 39 rows
+
+
+-- consuming inserted records captured by stream to the target table 
+-- by using tasks and scheduling it 
+
+-- creating a task for automation 
+
+create or replace task customer_task
+   warehouse = compute_wh
+   schedule = '1 minute '
+   when system$stream_has_data('etl.sky.customer_str')
+   as
+insert into tg_customer ( select Acct_no , extract_date , name , address , phone , email from customer_str );
+
+
+show tasks;
+
+-- resuming the task
+alter task customer_task suspend;
+
+
+
+
+-- HOME TASK 
+
+ /*
+
+
+consuming updated , deleted records from stream using task
+
+
+
+
+ */
+
+
+
+
+-- deleting some records for verification i.e stream capturing or not
+delete from customer where Acct_no in (1001);
+
+-- updating some records for verify i.e stream capturing or not
+BEGIN ;
+update customer set name='Praju' where Acct_no=1005;
+COMMIT;
+
+-- consuming all stream consumed data to target table in 1 go (inserts, updates and deletes)
+
+
+create or replace task customer_task_01
+   warehouse = compute_wh
+   schedule = '1 minute '
+   when system$stream_has_data('etl.sky.customer_str')
+   as
+MERGE INTO TG_CUSTOMER t
+USING customer_stream s
+on t.ACCT_NO = s.ACCT_NO
+when matched
+    and s.metadata$action = 'DELETE'
+    and s.metadata$isupdate = 'FALSE'
+    then delete
+when matched
+    and s.metadata$action = 'INSERT'
+    and s.metadata$isupdate = 'TRUE'
+    then update
+      set t.EXTRACT_DATE = s.EXTRACT_DATE,
+      t.NAME = s.NAME,
+      t.ADDRESS = s.ADDRESS,
+      t.PHONE = s.PHONE,
+      t.EMAIL = s.EMAIL  
+      when matched
+    and s.metadata$action ='insert'
+ and s.metadata$isupdate  = 'false'
+    insert into customer(select ACCT_NO, EXTRACT_DATE, NAME, ADDRESS, PHONE, EMAIL from custom_str);
+;
+
+
+      
+show tasks;
+
+alter task customer_task_01 resume;
+
+      
+
+
+
+
+

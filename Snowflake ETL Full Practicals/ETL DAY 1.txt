@@ -1,0 +1,99 @@
+-- ETL - EXTRACT, TRANFORM AND LOAD 
+
+1. EXTRACTION  -- 
+2. TRANSFORMATION
+3. LOADING 
+
+
+ 
+create or replace database etl;
+
+create or replace schema etl.etl;
+
+-- creating table
+create or replace table customer ( ACCT_NO INT NOT NULL PRIMARY KEY, EXTRACT_DATE DATE , NAME VARCHAR(100) , ADDRESS VARCHAR, PHONE VARCHAR(44), EMAIL VARCHAR(100) );
+
+-- creating a target ( consuming) table for consuming stream data
+create or replace table tg_customer ( ACCT_NO INT NOT NULL PRIMARY KEY, EXTRACT_DATE DATE , NAME VARCHAR(100) , ADDRESS VARCHAR, PHONE VARCHAR(44), EMAIL VARCHAR(100) );
+
+-- 1. EXTRACT -- aws , rdbms , iot , web servers , flate files - csv, psv , tsv ,json
+
+INSERT INTO CUSTOMER VALUES (
+1001,'01/01/2022','John','Melbourne','61370363526','john@gmail.com') ,
+(1002,'01/01/2022','Herry','Sydney','61370363527','herry@gmail.com' );
+
+
+-- 2. TRANSFORM
+
+create or replace stream customer_stream on table customer;
+
+show streams;
+
+select * from customer_stream;
+select * from customer;
+select * from tg_customer;
+
+-- doing some insertion, updation, deletion on customer tble so that stream can track those changes
+
+INSERT INTO CUSTOMER VALUES (
+1003,'01/01/2022','Praju','India','1234567890','praju@gmail.com') ;
+
+
+-- consuming inserted records
+insert into tg_customer ( select Acct_no , extract_date , name , address , phone , email from customer_stream );
+
+-- or use merge command -- home task
+
+-----------------------------------
+begin;
+-- doing some updation in the customer table and verifying if our stream is capturing or not
+update customer set name='skyy' where Acct_no=1003;
+
+commit;
+
+-- consuming updated records
+MERGE INTO TG_CUSTOMER t
+USING customer_stream s
+on t.ACCT_NO = s.ACCT_NO
+when matched
+    and s.metadata$action = 'INSERT'
+    and s.metadata$isupdate = 'TRUE'
+    then update
+      set t.EXTRACT_DATE = s.EXTRACT_DATE,
+      t.NAME = s.NAME,
+      t.ADDRESS = s.ADDRESS,
+      t.PHONE = s.PHONE,
+      t.EMAIL = s.EMAIL ;
+
+
+select * from customer_stream;
+select * from customer;
+select * from tg_customer;
+
+-- deleted records
+
+delete from customer where acct_no = 1001;
+
+-- consuming deleted records
+
+MERGE INTO TG_CUSTOMER t
+USING customer_stream s
+on t.ACCT_NO = s.ACCT_NO
+when matched
+    and s.metadata$action = 'DELETE'
+    and s.metadata$isupdate = 'FALSE'
+    then delete;
+
+
+
+
+
+
+-- creating target table to load latest data i.e new inserted,updated or deleted
+
+create or replace table tg_customer ( ACCT_NO INT NOT NULL PRIMARY KEY, EXTRACT_DATE DATE , NAME VARCHAR(100) , ADDRESS VARCHAR, PHONE VARCHAR(44), EMAIL VARCHAR(100) );
+
+
+
+
+
