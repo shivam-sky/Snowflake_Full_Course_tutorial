@@ -1,0 +1,159 @@
+
+-- PROCEDURAL LANGUAGE --> SQL 
+
+1. Simple Hello World Procedure
+2. Simple Example of Using Arguments Passed to a Stored Procedure
+3. Using an Argument in a SQL Statement (Binding) -- we use [:] for argument 
+4. Returning Tabular data
+5. Calling a Stored Procedure From Another Stored Procedure
+6. Some more Examples
+
+-- creating procedure for Hello World
+CREATE OR REPLACE PROCEDURE output_message(message VARCHAR)
+RETURNS VARCHAR NOT NULL
+LANGUAGE SQL
+AS
+$$
+BEGIN
+  RETURN message;
+END;
+$$
+;
+
+-- calling stored procedure
+CALL output_message('Hello World, Welcome to the sky universe');
+
+-------------------------------------------------------------------
+
+-- Simple Example of Using Arguments Passed to a Stored Procedure
+CREATE OR REPLACE PROCEDURE return_greater(num_1 INTEGER, num_2 INTEGER)
+RETURNS INTEGER NOT NULL
+LANGUAGE SQL
+AS
+$$
+BEGIN
+  IF (num_1 > num_2) THEN
+    RETURN num_1;
+  ELSE
+    RETURN num_2;
+  END IF;
+END;
+$$
+;
+
+-- calling 
+CALL return_greater(10, 3);
+
+----------------------------------------------------------------
+
+-- creating table for invoice procedure
+create or replace table Invoices (id integer, price number);
+insert into Invoices values (1, 1000);
+insert into Invoices values (2, 2000);
+insert into Invoices values (3, 3000);
+insert into Invoices values (4, 4000);
+insert into Invoices values (5, 5000);
+
+select * from Invoices;
+
+-- Using an Argument in a SQL Statement (Binding)
+CREATE OR REPLACE PROCEDURE find_invoice_by_id(id VARCHAR)
+RETURNS TABLE (id INTEGER, price NUMBER(12,2))
+LANGUAGE SQL
+AS
+$$
+DECLARE
+  res RESULTSET DEFAULT (SELECT * FROM invoices WHERE id = :id);
+BEGIN
+  RETURN TABLE(res);
+END;
+$$
+;
+
+CALL find_invoice_by_id('5');
+-----------------------------------------------------------------------------------
+
+-- Returning Tabular Data
+CREATE OR REPLACE PROCEDURE find_invoice_by_id(id VARCHAR)
+RETURNS TABLE (id INTEGER, price NUMBER(12,2))
+LANGUAGE SQL
+AS
+$$
+DECLARE
+  res RESULTSET DEFAULT (SELECT * FROM invoices WHERE id = :id);
+BEGIN
+  RETURN TABLE(res);
+END;
+$$
+;
+
+CALL find_invoice_by_id('5');
+
+
+-------------------------------------------------------------------------------------------------
+
+-- Calling a Stored Procedure From Another Stored Procedure
+
+-- Create a table for use in the example.
+CREATE OR REPLACE TABLE int_table (value INTEGER);
+
+-- Create a stored procedure to be called from another stored procedure.
+CREATE OR REPLACE PROCEDURE insert_value(value INTEGER)
+RETURNS VARCHAR NOT NULL
+LANGUAGE SQL
+AS
+$$
+BEGIN
+  INSERT INTO int_table VALUES (:value);
+  RETURN 'Rows inserted: ' || SQLROWCOUNT;
+END;
+$$
+;
+
+-- create a second stored procedure that calls the first stored procedure:
+CREATE OR REPLACE PROCEDURE insert_two_values(value1 INTEGER, value2 INTEGER)
+RETURNS VARCHAR NOT NULL
+LANGUAGE SQL
+AS
+$$
+BEGIN
+  CALL insert_value(:value1);
+  CALL insert_value(:value2);
+  RETURN 'Finished calling stored procedures';
+END;
+$$
+;
+
+-- calling 
+CALL insert_two_values(4, 5);
+
+
+select * from int_table;
+
+------------------------------------------------------------------------------------------------------------------------------
+
+CREATE OR REPLACE PROCEDURE get_order_count(customer_id INT)
+RETURNS VARCHAR
+LANGUAGE SQL
+AS
+$$
+    SELECT COUNT(*) AS ORDER_COUNT FROM SNOWFLAKE_SAMPLE_DATA.TPCH_SF100.ORDERS WHERE C_CUSTOMER_SK = :customer_id;
+$$;
+
+call get_order_count('2');
+
+GRANT SELECT ON TABLE SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.customer TO accountadmin;
+
+
+
+-----------------------------
+create or replace table employee (emp_id int ,employee_name varchar, job_title varchar, salary float);
+
+
+
+
+
+
+
+
+

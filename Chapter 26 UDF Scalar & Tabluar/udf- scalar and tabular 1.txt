@@ -1,0 +1,209 @@
+
+                          *****   USER DEFINED FUNCTIONS [ UDF ]    *****
+
+-- UDF allows you to perform operations that are not available through the built-in, system defined functions.
+--     Create UDF whenever there is a need to repeat the same functionality.
+
+-- Snowflake UDFs can return scalar(Just a value or a string) and tabular results.
+
+-- THERE ARE 2 TYPES OF UDF AVAILABLE IN SNOWFLAKE  -->     1. SCALAR   2. TABULAR
+
+---- SCALAR: Returns output for each input we are passing(varchar or any string or value).
+---- TABULAR: Returns a table (Can return zero, one or multiple rows).
+
+-- Snowflake supports 4 languages for writing UDFs.
+-- 1. SQL    2.Java Script   3.Java    4.Python
+
+-- Snowflake supports UDF overloading,  --  means support functions with same name but different params.
+--       Proc_Calculate_Area() is different from Proc_Calculate_Area(Radius FLOAT)
+--       Proc_Calculate_Area(Radius FLOAT) is different from
+--       Proc_Calculate_Area(Length number, Width Number)
+
+---------------------------------------------SCALAR UDF----------------------------------------------------------
+create or replace schema udf_proc;
+
+-- creating a simple SQL udf
+create or replace secure function simple_sql_udf()
+returns string
+language SQL
+comment = 'This is simple sql language udf'
+as
+$$
+    select 'simple sql language udf'
+$$ ; 
+
+Select simple_sql_udf();
+
+-- fun for calculating areas of circle
+create function area_of_circle(radius float)
+returns float
+as
+$$
+    pi()* radius *radius
+$$  ;
+Select area_of_circle(5.5);
+
+-- fun for cal multiplication
+create or replace function cal_multi(a float , b float)
+returns float
+as 
+$$
+   case
+      when a is null then 0
+      else
+      a * b
+      end  $$
+;
+select cal_multi(5,2);
+select cal_multi(5,null);
+select cal_multi(6,0);
+select cal_multi(0,2);
+
+--=================================== fun on SNOWFLAKE_SAMPLE_DATA ==================
+
+-- Create funtion to calculate Tax
+-- SCENARIO 1 - Fixed Tax of 10%
+CREATE OR REPLACE FUNCTION CUST_TAX(PRICE FLOAT)
+RETURNS FLOAT
+AS
+$$
+    (PRICE * 10)/100
+$$
+;
+
+-- Grant the access on function to all users/roles
+GRANT USAGE ON FUNCTION CUST_TAX(FLOAT) TO public;
+
+-- listing data from table with tax
+select O_ORDERKEY, O_ORDERDATE, O_TOTALPRICE, CUST_TAX(O_TOTALPRICE)
+FROM SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.ORDERS;
+
+---------------------------------------------------
+-- fun name is same and we will do the overloading as well here
+-- fun name is same but we are passing diff parameters
+
+-- SCENARIO 2 - Variable Tax
+CREATE OR REPLACE FUNCTION CUST_TAX(PRICE FLOAT, TAX_PER FLOAT)
+RETURNS FLOAT
+AS
+$$
+    (PRICE * TAX_PER)/100
+$$
+;
+
+-- Grant the access on function to all users/roles
+GRANT USAGE ON FUNCTION CUST_TAX(FLOAT, FLOAT) TO PUBLIC;
+
+-- Get the tax on all orders
+select O_ORDERKEY, O_ORDERDATE, O_TOTALPRICE, CUST_TAX(O_TOTALPRICE, 7.5)
+FROM SNOWFLAKE_SAMPLE_DATA.TPCH_SF1.ORDERS;
+
+
+===================================================================================================================================
+
+------------------------------------------------------TABULAR UDF----------------------------------------------------------------
+
+create or replace table sky.udf_proc.Employee CLONE sky.sky.Emp;
+
+select * from Employee;
+-- fun on employee table
+create or replace function emp_fun()
+returns table  (empid integer , empname String)
+as 
+$$
+select * from 
+Employee where EMPNAME like 'p%'
+$$
+;
+select * from table(emp_fun());
+
+-- creating a simple orders table
+create or replace table orders(
+    order_id number,
+    customer_id_fk number,
+    item_id_fk number,
+    retail_price number(10,2),
+    purchase_price number(10,2),
+    sold_quantity number(3),
+    country_code varchar(2)
+);
+
+-- inserting records
+insert into orders values
+(1,1,1,99.2,89.6,2,'US'),
+(2,8,2,17.1,11,10,'IN'),
+(3,5,1,827,900.99,5,'JP'),
+(4,10,4,200,172,7,'DE');
+
+select * from orders;
+
+--creating fun for cal profit
+create or replace function calculate_profit(retail_price number, purchase_price number, sold_quantity number)
+returns number(10,2)
+as 
+$$
+ select ((retail_price - purchase_price) * sold_quantity)
+$$;
+
+-- calling fun by passing the values
+select calculate_profit(100,90,6);
+
+-- calling calculate_profit fun
+select item_id_fk, retail_price, purchase_price, sold_quantity, 
+       calculate_profit(retail_price,purchase_price, sold_quantity) as profit_udf from orders ;
+
+--cal profit without fun- and observing same profit for both 
+select item_id_fk, retail_price, purchase_price, sold_quantity,
+    ((retail_price - purchase_price) * sold_quantity) as profit
+from orders ;
+------------------------------
+
+--------------------------other exp
+
+// Creating some sample tables
+CREATE OR REPLACE TABLE COUNTRIES 
+(COUNTRY_CODE CHAR(2), COUNTRY_NAME VARCHAR);
+
+INSERT INTO COUNTRIES(COUNTRY_CODE, COUNTRY_NAME) VALUES 
+    ('FR', 'FRANCE'),
+    ('US', 'UNITED STATES'),
+    ('IN', 'INDIA'),
+    ('SP', 'SPAIN');
+
+CREATE OR REPLACE TABLE USER_ADDRESSES 
+(USER_ID INTEGER, COUNTRY_CODE CHAR(2));
+
+INSERT INTO USER_ADDRESSES (USER_ID, COUNTRY_CODE) VALUES 
+    (100, 'SP'),
+    (123, 'FR'),
+    (567, 'US'),
+    (420, 'IN');
+ 
+-- Create a function to fetch country name of customer 
+CREATE OR REPLACE FUNCTION GET_COUNTRIES_FOR_USER(ID NUMBER)
+  RETURNS TABLE (USER_ID NUMBER, COUNTRY_NAME VARCHAR)
+AS 
+$$
+SELECT ID, C.COUNTRY_NAME FROM udf_proc.USER_ADDRESSES A, udf_proc.COUNTRIES C
+      WHERE A.USER_ID = ID
+      AND C.COUNTRY_CODE = A.COUNTRY_CODE
+$$
+;
+
+-- Fetch country name for specified user id   
+SELECT * from table(udf_proc.GET_COUNTRIES_FOR_USER(100));
+
+-- Fetch country name for all users
+SELECT F.* from udf_proc.USER_ADDRESSES, table(udf_proc.GET_COUNTRIES_FOR_USER(USER_ID)) F;
+ 
+--------------------------------------------------------------------------------------------
+
+-- now lets understand show and desc function features.
+show functions;
+
+-- filter by using object name
+show functions like 'COUNTRY%';
+show functions like'%PROFIT';
+
+-- how to describe a function using desc function sql keywords
+desc function country_name(string);

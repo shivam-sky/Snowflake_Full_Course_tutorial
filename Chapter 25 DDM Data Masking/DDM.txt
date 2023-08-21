@@ -1,0 +1,169 @@
+                        Contents of the session
+
+1. What is Snowflake Dynamic Data Masking?
+2. Steps to apply Snowflake Dynamic Data Masking on a column
+  Step-1: Create a Custom Role with Masking Privileges
+  Step-2: Assign Masking Role to an existing Role/User
+  Step-3: Create a Masking Policy
+  Step-4: Apply (Set) the Masking Policy to a Table or View Column
+  Step-5: Verify the masking rules by querying data
+3. Remove (Unset) Masking Policy on a column
+4. Partial Data Masking in Snowflake
+5. Conditional Data Masking in Snowflake
+6. Altering Masking Policies in Snowflake
+7. Extracting information of existing Masking Policies in Snowflake
+     SHOW MASKING POLICIES
+     DESCRIBE MASKING POLICY
+8. Dropping Masking Policies in Snowflake
+9. Limitations of Snowflake Dynamic Data Masking
+
+--------------------------------------------------------------------------------------------------------------------------------------
+1. What is Snowflake Dynamic Data Masking?  /*
+Snowflake Dynamic Data Masking is a security feature that allows organizations to mask sensitive data in their database tables, 
+views, and query results in real-time. This is useful for protecting sensitive information from unauthorized access or exposure.
+
+-- Snowflake Dynamic Data Masking allows the data to be masked as it is accessed, rather than being permanently altered in the database.
+
+-- With Dynamic Data Masking, users can choose which data to mask and how it should be masked, such as by replacing sensitive 
+  information with dummy values or by partially revealing data. */
+  
+---------------------------------------------------------------------------------------------------------------------------------
+
+2. Steps to apply Snowflake Dynamic Data Masking on a column
+  Step-1: Create a Custom Role with Masking Privileges
+  Step-2: Assign Masking Role to an existing Role/User
+  Step-3: Create a Masking Policy
+  Step-4: Apply (Set) the Masking Policy to a Table or View Column
+  Step-5: Verify the masking rules by querying data   ;
+  
+-----------------------------------  
+  Step-1: Create a Custom Role with Masking Privileges
+
+-- create a custom role MASKINGADMIN in Snowflake
+create role MASKINGADMIN02;
+
+-- grants privileges to create masking policies to the role MASKINGADMIN02.
+grant create masking policy on schema sky.aws to role MASKINGADMIN02;
+
+-- grants privileges to apply masking policies to the role MASKINGADMIN02.
+grant apply masking policy on account to role MASKINGADMIN02;
+
+
+  Step-2: Assign Masking Role to an existing Role/User
+
+-- assigns MASKINGADMIN to another custom role named DATAENGINEER.
+grant role MASKINGADMIN to role DATAENGINEER; 
+
+-- OR assigns MASKINGADMIN to a User named STEVE.
+grant role MASKINGADMIN to user STEVE;
+
+
+ Step-3: Create a Masking Policy STRING_MASK that can be applied to columns of type string.
+
+-- creating a masking policy 
+create or replace masking policy STRING_MASK as (val string) returns string ->
+  case
+    when current_role() in ('DATAENGINEER') then val
+    else '*********'
+  end;
+  
+
+ Step-4: Apply (Set) the Masking Policy to a Table or View Column
+
+-- applies the masking policy EMAIL_MASK on a column named LAST_NAME in EMPLOYEE table.
+alter table if exists user_email modify column LAST_NAME set masking policy STRING_MASK;
+
+Step-5: Verify the masking rules by querying data
+
+-- Verify the data present in EMPLOYEE table by querying from two different roles.
+-- ANALYST / DATAENGINEER
+
+=============================================================================================================================
+
+3. Remove (Unset) Masking Policy on a column
+
+-- The below SQL statement removes (unsets) a masking policy applied on a column present in a table.
+alter table if exists EMPLOYEE modify LAST_NAME unset masking policy ;
+
+============================================================================================================================
+
+4. Partial Data Masking in Snowflake
+
+
+-- The below SQL statement creates a masking policy EMAIL_MASK which partially mask the email data when queried from ANALYST role leaving the email domain unmasked.
+create or replace masking policy EMAIL_MASK as (val string) returns string ->
+case
+  when current_role() in ('DATAENGINEER') then val
+  when current_role() in ('ANALYST') then regexp_replace(val,'.+\@','*****@') -- leave email domain unmasked
+  else '********'
+end;
+
+
+--The below SQL statement applies the masking policy EMAIL_MASK on a column named EMAIL in EMPLOYEE table.
+alter table if exists EMPLOYEE modify column EMAIL set masking policy EMAIL_MASK;
+
+-- verify data from roles
+
+=============================================================================================================================
+
+5. Conditional Data Masking in Snowflake
+
+-- The below SQL statement masks the data when the value of conditional columnis less than 105.
+create or replace masking policy EMAIL_MASK as (mask_col string, cond_col number ) returns string ->
+  case
+    when cond_col < 105 then mask_col
+    else '*********'
+  end;
+
+-- The below SQL statement applies the masking policy EMAIL_MASK on a column named EMAIL based on the value of the conditional column EMPLOYEE_ID present in the EMPLOYEE table.
+alter table if exists EMPLOYEE modify column EMAIL set masking policy EMAIL_MASK using(email, employee_id);
+
+-- verify
+
+===========================================================================================================================
+
+
+6. Altering Masking Policies in Snowflake
+
+-- Below is the syntax to alter the existing masking policy in Snowflake.
+
+ALTER MASKING POLICY [ IF EXISTS ] <name> SET BODY -> <expression_on_arg_name>
+
+ALTER MASKING POLICY [ IF EXISTS ] <name> RENAME TO <new_name>
+
+ALTER MASKING POLICY [ IF EXISTS ] <NAME> SET COMMENT = '<string_literal>'
+
+===========================================================================================================================
+
+7. Extracting information of existing Masking Policies in Snowflake
+
+-- The below SQL statements extracts the masking policies present in the database and schema of the current session.
+show masking policies;
+
+-- The below SQL statement extracts all the masking policies present across the account.
+show masking policies in account;
+
+--DESCRIBE
+
+-- The below SQL statement extracts information of the masking policy STRING_MASK.
+describe masking policy STRING_MASK;
+===========================================================================================================================
+
+8. Dropping Masking Policies in Snowflake
+
+
+-- The below SQL statement lists all the columns on which EMAIL_MASK masking policy is applied.
+select * from table(information_schema.policy_references(policy_name=>'EMAIL_MASK'));
+
+
+-- The below SQL statement drops the masking policy named EMAIL_MASK;
+drop masking policy EMAIL_MASK;
+
+==========================================================================================================================
+
+9. Limitations of Snowflake Dynamic Data Masking
+
+-- Currently, Snowflake does not support different input and output data types in a masking policy, 
+--    i.e you cannot mask a date column with a string value (e.g. ***MASKED***).
+
+-- The input and output data types of a masking policy must match.

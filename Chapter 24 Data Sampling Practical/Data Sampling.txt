@@ -1,0 +1,128 @@
+                =============================================================
+                                    Data Sampling - ROW , BLOCK 
+                =============================================================
+
+-- Sampling method is optional. If no method is specified, the default is BERNOULLI.
+
+1. BERNOULLI (or ROW): Includes *each row with a probability of p/100. Similar to flipping a weighted coin for each row.
+
+2. SYSTEM (or BLOCK): Includes each *block of rows with a probability of p/100. This method does not support fixed-size sampling.
+
+3. REPEATABLE | SEED ( seed ) : Specifies a seed value to make the sampling deterministic. Can be any integer 
+
+-- The following keywords can be used interchangeably:
+    SAMPLE | TABLESAMPLE
+    BERNOULLI | ROW
+    SYSTEM | BLOCK
+    REPEATABLE | SEED
+
+-- The number of rows returned depends on the sampling method specified :
+
+1.  Fraction-based : - 
+    -- If no seed is specified, SAMPLE generates different results when the same query is repeated.
+    -- If a table does not change, and the same seed and probability are specified, SAMPLE generates the same result.
+    -- However, sampling on a copy of a table might not return the same result as sampling on the original table, even if the same
+
+ROW -- Return a sample of a table in which *each row has a 20.3% probability of being included in the sample:
+      select * from testtable tablesample bernoulli (20.3);
+
+BLOCK -- Return a sample of a table in which each *block of rows has a 3% probability of being included in the sample, and set the seed to 82:
+       select * from testtable sample system (3) seed (82);
+
+2.  Fixed-size : -
+-- If the table is larger than the requested number of rows, the number of requested rows is always returned.
+-- If the table is smaller than the requested number of rows, the entire table is returned.
+
+-- examples : 
+select * from example_table sample system (10 rows);
+select * from example_table sample row (10 rows) seed (99);
+
+-- Sampling with a seed is not supported on views or subqueries
+select * from (select * from example_table) sample (1) seed (99);
+
+-- SYSTEM | BLOCK and seed are not supported for *fixed-size sampling
+
+
+Some Examples:
+
+1. select * from tablename sample row(10);  -- Return a sample with 10% of rows
+
+2. select * from tablename tablesample block (20); -- Return a sample with data from 20% blocks
+
+-- Return a sample with data from 10% of blocks and guarantees same data set if we use seed 111 next time
+3. select * from tablename sample system (10) seed (111) ;
+
+4. select * from tablename tablesample (100); -- Return an entire table, including all rows into the sample
+
+5. select * from tablename sample row (0);  -- Return an empty sample -- No need 
+
+6. select * from tablename sample (10 rows);  -- Return a fixed-size sample of 10 rows
+
+-----------------------------------------------------------------------------------------------------------------------
+
+create or replace schema sample_dt;
+
+-- from customer_csv table 
+select * from customer_csv sample row (10);  -- use limit also here -- % of rows
+select * from customer_csv sample block (10);  --  % from block of rows
+
+-- just selecting sample data from snowflake demo db
+select * from snowflake_sample_data.tpch_sf10.customer  -- 150,019
+    sample bernoulli (10);
+
+select * from snowflake_sample_data.tpch_sf10.customer  -- 82,500 
+    sample system (5) seed (111);
+ 
+-------------------------------------------------------------------------------------------------------
+-- Creating tables with sample data 
+1. FRACTION SAMPLING
+
+-- bernoulli or row ------ APPROX SAME SAME
+create table customer_1 as
+select * from snowflake_sample_data.tpch_sf10.customer   -- 1,500,000
+    sample (10);
+    
+create table customer_2 as
+select * from snowflake_sample_data.tpch_sf10.customer  -- 150,321 
+    sample row (10);
+    
+select count(1) from snowflake_sample_data.tpch_sf10.customer; -- 1500000
+select count(1) from customer_1;  -- 150419
+select count(1) from customer_2;  -- 150035
+
+---------------------------------------------------------------------------------------------------------
+
+-- system or block     -- HAVE MORE DIFF in comparison with ROW method
+create table customer_3 as
+select * from snowflake_sample_data.tpch_sf10.customer  -- 79,500
+    sample block (10);
+    
+create table customer_4 as
+select * from snowflake_sample_data.tpch_sf10.customer  -- 82,500
+    sample system (5) seed (111);
+
+select count(1) from snowflake_sample_data.tpch_sf10.customer;  --1500000
+select count(1) from customer_3;  -- 82500
+select count(1) from customer_4;  -- 82500
+
+---------------------------------------------------------------------------------------------------------
+2. FIXED SAMPLING
+
+-- sample with fixed number of rows
+create table customer_5 as
+select * from snowflake_sample_data.tpch_sf10.customer  -- 1000 fixed
+    sample row (1000 rows);
+    
+select count(1) from customer_5;  -- 1000 fixed
+-------------------------------------------------------------------------------------------------------    
+
+-- check the seed is same or not
+select * from customer_4
+minus
+select * from snowflake_sample_data.tpch_sf10.customer
+    sample system (5) seed (111); -- same  -- 0 rows means no difference
+    
+select * from customer_3
+minus
+select * from snowflake_sample_data.tpch_sf10.customer
+    sample system (5) seed (111); -- not same     
